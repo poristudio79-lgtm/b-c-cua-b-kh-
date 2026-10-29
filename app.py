@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Dino Chrome Buff Edition", layout="wide")
+st.set_page_config(page_title="Dino T-Rex Helicopter Remote Edition", layout="wide")
 
 html_code = """
 <!DOCTYPE html>
@@ -48,9 +48,9 @@ html_code = """
             position: absolute;
             top: 60px;
             left: 30px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            color: #d9534f;
+            color: #0275d8;
             z-index: 10;
         }
         #quiz-box {
@@ -138,15 +138,12 @@ html_code = """
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO T-REX (BUFF ITEMS)</div>
+            <div class="title">🦖 DINO HELICOPTER REMOTE</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy.<br>
-                • <b>Ăn Thực phẩm chức năng / Vật phẩm trên đường[cite: 2]:</b><br>
-                &nbsp;&nbsp;💊 <b>Viên Bổ Năng Lượng:</b> Nhảy cực cao & tăng tốc.<br>
-                &nbsp;&nbsp;🗡️ <b>Kiếm Vô Địch:</b> Tông nát mọi xương rồng.<br>
-                &nbsp;&nbsp;🛡️ <b>Khiên Bảo Vệ:</b> Đỡ 1 lần va chạm.<br>
-                • Giải câu đố trí tuệ định kỳ để ghi điểm tích lũy!
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy vượt chướng ngại vật.<br>
+                • 📡 <b>Lụm Remote Điều Khiển:</b> Khủng long sẽ leo lên trực thăng bay vút lên trời trong <b>10 giây</b> và tự động hạ cánh an toàn!<br>
+                • Trả lời các câu đố trí tuệ định kỳ trên đường chạy để tích lũy điểm!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
@@ -156,7 +153,7 @@ html_code = """
             <div>CÂU HỎI ĐÃ GIẢI: <span id="puzzle-count">0</span></div>
         </div>
 
-        <div id="buff-status">TRẠNG THÁI: BÌNH THƯỜNG</div>
+        <div id="buff-status">TRẠNG THÁI: CHẠY BỘ</div>
 
         <div id="quiz-box">
             <div id="quiz-question">Đang tải câu hỏi...</div>
@@ -188,9 +185,11 @@ let puzzleSolvedCount = 0;
 let gameSpeed = 7;
 let animFrame = 0;
 
-// Trạng thái Buff
-let activeBuff = null; // 'pill', 'sword', 'shield'
-let buffTimer = 0;
+// Trạng thái bay bằng Trực Thăng
+let isFlying = false;
+let flyTimer = 0; // 600 frames = 10 giây
+let heliY = 0;
+let targetHeliY = 0;
 
 const puzzleBank = [
     { q: "Số tiếp theo trong dãy là gì? 2, 4, 8, 16, ...", options: ["24", "32", "64"], answer: "32" },
@@ -204,7 +203,12 @@ const puzzleBank = [
 const dino = {
     x: 80, y: 0, w: 56, h: 60, vy: 0, gravity: 0.8, jumpPower: -14, grounded: true,
     update(groundY) {
-        let currentJump = activeBuff === 'pill' ? -18 : -14;
+        if (isFlying) {
+            // Khi đang bay trực thăng
+            this.y += (heliY - 40 - this.y) * 0.1;
+            return;
+        }
+
         this.vy += this.gravity;
         this.y += this.vy;
         if (this.y > groundY - this.h) {
@@ -222,11 +226,7 @@ const dino = {
         ctx.translate(px, py);
         ctx.scale(s, s);
 
-        // Đổi màu khủng long theo trạng thái Buff[cite: 2]
-        if (activeBuff === 'sword') ctx.fillStyle = '#d9534f'; // Màu đỏ võ sĩ
-        else if (activeBuff === 'pill') ctx.fillStyle = '#f0ad4e'; // Màu vàng năng lượng
-        else if (activeBuff === 'shield') ctx.fillStyle = '#0275d8'; // Màu xanh lá chắn
-        else ctx.fillStyle = '#535353';
+        ctx.fillStyle = '#535353';
 
         // 1. Đầu khủng long T-Rex
         ctx.fillRect(20, 0, 18, 14);       
@@ -235,28 +235,23 @@ const dino = {
         ctx.fillRect(28, 3, 3, 3);
 
         // 2. Thân chính
-        if (activeBuff === 'sword') ctx.fillStyle = '#d9534f';
-        else if (activeBuff === 'pill') ctx.fillStyle = '#f0ad4e';
-        else if (activeBuff === 'shield') ctx.fillStyle = '#0275d8';
-        else ctx.fillStyle = '#535353';
-
+        ctx.fillStyle = '#535353';
         ctx.fillRect(10, 14, 18, 16);    
 
-        // 3. Đôi tay vươn ra (Vẽ thêm vũ khí nếu ăn buff Kiếm)[cite: 2]
+        // 3. Đôi tay vươn ra
         ctx.fillRect(26, 18, 7, 3); 
         ctx.fillRect(31, 20, 2, 4); 
-        if (activeBuff === 'sword') {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(33, 12, 14, 4); // Thanh kiếm vươn ra trước[cite: 2]
-        }
 
         // 4. Đuôi
         ctx.fillRect(2, 16, 8, 8);
         ctx.fillRect(-2, 18, 4, 6);
         ctx.fillRect(-6, 20, 4, 4);
 
-        // 5. Chân bước
-        if (animFrame % 18 < 9) {
+        // 5. Chân
+        if (isFlying) {
+            ctx.fillRect(10, 30, 5, 8);  
+            ctx.fillRect(18, 30, 5, 8);   
+        } else if (animFrame % 18 < 9) {
             ctx.fillRect(10, 30, 5, 12);  
             ctx.fillRect(18, 30, 5, 7);   
         } else {
@@ -264,21 +259,53 @@ const dino = {
             ctx.fillRect(18, 30, 5, 12);  
         }
 
-        // Hào quang khi có giáp
-        if (activeBuff === 'shield') {
-            ctx.strokeStyle = '#0275d8';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(20, 20, 26, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
         ctx.restore();
     }
 };
 
+function drawHelicopter(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Bánh quạt quay
+    ctx.fillStyle = '#333';
+    let rotorOffset = (animFrame % 4) * 8;
+    ctx.fillRect(-35 + rotorOffset, -20, 70 - rotorOffset * 2, 4);
+
+    // Trục cánh quạt
+    ctx.fillRect(-2, -16, 4, 6);
+
+    // Thân trực thăng
+    ctx.fillStyle = '#2b5b54'; // Màu xanh quân sự mờ
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 38, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1a3a35';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Cửa kính trực thăng
+    ctx.fillStyle = '#8ce8ff';
+    ctx.beginPath();
+    ctx.arc(16, -4, 12, -Math.PI / 2, Math.PI / 2);
+    ctx.fill();
+
+    // Đuôi trực thăng
+    ctx.fillStyle = '#2b5b54';
+    ctx.fillRect(-60, -6, 30, 10);
+    ctx.fillRect(-65, -16, 8, 20);
+
+    // Chân hạ cánh
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-22, 20, 44, 4);
+    ctx.fillRect(-12, 16, 4, 6);
+    ctx.fillRect(10, 16, 4, 6);
+
+    ctx.restore();
+}
+
 let obstacles = [];
-let items = [];
+let remotes = [];
 let clouds = [];
 
 function spawnObstacle(groundY) {
@@ -293,15 +320,12 @@ function spawnObstacle(groundY) {
     obstacles.push(obs);
 }
 
-function spawnItem(groundY) {
-    let types = ['pill', 'sword', 'shield'];
-    let chosenType = types[Math.floor(Math.random() * types.length)];
-    items.push({
+function spawnRemote(groundY) {
+    remotes.push({
         x: canvas.width,
-        y: groundY - 80,
-        w: 24,
-        h: 24,
-        type: chosenType
+        y: groundY - 70,
+        w: 26,
+        h: 30
     });
 }
 
@@ -310,10 +334,10 @@ function spawnCloud() {
 }
 
 window.addEventListener('keydown', e => {
-    if (!gameRunning || quizBox.style.display === 'block') return;
+    if (!gameRunning || quizBox.style.display === 'block' || isFlying) return;
     if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         if (dino.grounded) {
-            dino.vy = activeBuff === 'pill' ? -17 : dino.jumpPower;
+            dino.vy = dino.jumpPower;
             dino.grounded = false;
         }
     }
@@ -325,16 +349,16 @@ function startGame() {
     puzzleSolvedCount = 0;
     gameSpeed = 7;
     obstacles = [];
-    items = [];
+    remotes = [];
     clouds = [];
-    activeBuff = null;
-    buffTimer = 0;
+    isFlying = false;
+    flyTimer = 0;
     gameRunning = true;
     loop();
 }
 
 let obstacleTimer = 0;
-let itemTimer = 0;
+let remoteTimer = 0;
 let cloudTimer = 0;
 let puzzleTriggerDistance = 0;
 
@@ -372,12 +396,23 @@ function loop() {
 
     const groundY = canvas.height - 80;
 
-    // Quản lý Buff Timer
-    if (buffTimer > 0) {
-        buffTimer--;
-        if (buffTimer === 0) {
-            activeBuff = null;
-            buffStatusEl.innerText = "TRẠNG THÁI: BÌNH THƯỜNG";
+    // Quản lý Trạng thái Trực Thăng 10 Giây
+    if (isFlying) {
+        flyTimer--;
+        let secondsLeft = Math.ceil(flyTimer / 60);
+        buffStatusEl.innerText = `🚁 ĐANG LÁI TRỰC THĂNG BAY TRÊN TRỜI: ${secondsLeft}s`;
+        buffStatusEl.style.color = "#0275d8";
+
+        if (flyTimer > 60) {
+            targetHeliY = groundY - 220; // Bay trên cao
+        } else {
+            targetHeliY = groundY - 50; // Từ từ hạ cánh 1 giây cuối
+        }
+        heliY += (targetHeliY - heliY) * 0.08;
+
+        if (flyTimer <= 0) {
+            isFlying = false;
+            buffStatusEl.innerText = "TRẠNG THÁI: CHẠY BỘ";
             buffStatusEl.style.color = "#535353";
         }
     }
@@ -404,57 +439,45 @@ function loop() {
         if (c.x < -70) clouds.splice(i, 1);
     }
 
-    // Sinh vật phẩm / Thực phẩm bổ trợ[cite: 2]
-    itemTimer++;
-    if (itemTimer > 280) {
-        spawnItem(groundY);
-        itemTimer = 0;
+    // Sinh Remote Điều Khiển Trực Thăng
+    remoteTimer++;
+    if (remoteTimer > 350 && !isFlying) {
+        spawnRemote(groundY);
+        remoteTimer = 0;
     }
 
-    for (let i = items.length - 1; i >= 0; i--) {
-        let it = items[i];
-        it.x -= gameSpeed;
+    for (let i = remotes.length - 1; i >= 0; i--) {
+        let rm = remotes[i];
+        rm.x -= gameSpeed;
 
-        // Vẽ biểu tượng Thực phẩm bổ trợ[cite: 2]
+        // Vẽ chiếc Remote Điều Khiển
         ctx.save();
-        if (it.type === 'pill') {
-            ctx.fillStyle = '#f0ad4e';
-            ctx.fillRect(it.x, it.y, 20, 10);
-            ctx.fillStyle = '#d9534f';
-            ctx.fillRect(it.x + 10, it.y, 10, 10);
-        } else if (it.type === 'sword') {
-            ctx.fillStyle = '#d9534f';
-            ctx.fillRect(it.x + 8, it.y, 4, 18);
-            ctx.fillRect(it.x + 4, it.y + 14, 12, 4);
-        } else if (it.type === 'shield') {
-            ctx.fillStyle = '#0275d8';
-            ctx.fillRect(it.x, it.y, 18, 18);
-        }
+        ctx.fillStyle = '#333';
+        ctx.fillRect(rm.x, rm.y, 22, 28);
+        // Anten
+        ctx.fillRect(rm.x + 9, rm.y - 8, 4, 8);
+        // Màn hình remote
+        ctx.fillStyle = '#00ffcc';
+        ctx.fillRect(rm.x + 3, rm.y + 3, 16, 10);
+        // Nút bấm đỏ
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(rm.x + 6, rm.y + 16, 10, 8);
         ctx.restore();
 
-        // Ăn vật phẩm[cite: 2]
+        // Lụm Remote
         if (
-            dino.x < it.x + it.w &&
-            dino.x + dino.w > it.x &&
-            dino.y < it.y + it.h &&
-            dino.y + dino.h > it.y
+            dino.x < rm.x + rm.w &&
+            dino.x + dino.w > rm.x &&
+            dino.y < rm.y + rm.h &&
+            dino.y + dino.h > rm.y
         ) {
-            activeBuff = it.type;
-            buffTimer = 300; // Hiệu lực trong 300 khung hình (~5 giây)
-            if (it.type === 'pill') {
-                buffStatusEl.innerText = "⚡ BUFF: VIÊN NĂNG LƯỢNG (SIÊU NHẢY)";
-                buffStatusEl.style.color = "#f0ad4e";
-            } else if (it.type === 'sword') {
-                buffStatusEl.innerText = "🗡️ BUFF: KIẾM VÔ ĐỊCH (TÔNG NÁT XƯƠNG RỒNG)";
-                buffStatusEl.style.color = "#d9534f";
-            } else if (it.type === 'shield') {
-                buffStatusEl.innerText = "🛡️ BUFF: GIÁP BẢO VỆ (ĐỠ 1 LẦN DÍNH BẪY)";
-                buffStatusEl.style.color = "#0275d8";
-            }
-            items.splice(i, 1);
+            isFlying = true;
+            flyTimer = 600; // 10 giây (600 khung hình)
+            heliY = dino.y;
+            remotes.splice(i, 1);
         }
 
-        if (it.x < -40) items.splice(i, 1);
+        if (rm.x < -40) remotes.splice(i, 1);
     }
 
     // Sinh chướng ngại vật
@@ -481,26 +504,14 @@ function loop() {
             ctx.fillRect(obs.x, obs.y + (animFrame % 14 < 7 ? 0 : 8), obs.w, obs.h);
         }
 
-        // Kiểm tra va chạm
-        if (
-            dino.x < obs.x + obs.w - 8 &&
-            dino.x + dino.w - 8 > obs.x &&
-            dino.y < obs.y + obs.h - 8 &&
-            dino.y + dino.h - 8 > obs.y
-        ) {
-            if (activeBuff === 'sword') {
-                // Tông nát chướng ngại vật!
-                obstacles.splice(i, 1);
-                score += 100;
-                continue;
-            } else if (activeBuff === 'shield') {
-                // Đỡ 1 đòn dính bẫy
-                activeBuff = null;
-                buffStatusEl.innerText = "TRẠNG THÁI: BÌNH THƯỜNG";
-                buffStatusEl.style.color = "#535353";
-                obstacles.splice(i, 1);
-                continue;
-            } else {
+        // Kiểm tra va chạm (Nếu đang bay trực thăng thì bỏ qua mọi va chạm)
+        if (!isFlying) {
+            if (
+                dino.x < obs.x + obs.w - 8 &&
+                dino.x + dino.w - 8 > obs.x &&
+                dino.y < obs.y + obs.h - 8 &&
+                dino.y + dino.h - 8 > obs.y
+            ) {
                 gameRunning = false;
                 introOverlay.style.display = 'flex';
                 document.querySelector('.title').innerText = "💀 GAME OVER";
@@ -515,6 +526,10 @@ function loop() {
 
     dino.update(groundY);
     dino.draw();
+
+    if (isFlying) {
+        drawHelicopter(dino.x + 20, heliY);
+    }
 
     score += 1;
     puzzleTriggerDistance++;
