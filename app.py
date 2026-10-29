@@ -1,8 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Cấu hình tràn khung giao diện Streamlit
-st.set_page_config(page_title="Dino Chrome Fullscreen", layout="wide")
+st.set_page_config(page_title="Dino Chrome Buff Edition", layout="wide")
 
 html_code = """
 <!DOCTYPE html>
@@ -40,9 +39,18 @@ html_code = """
             right: 30px;
             display: flex;
             justify-content: space-between;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             color: #535353;
+            z-index: 10;
+        }
+        #buff-status {
+            position: absolute;
+            top: 60px;
+            left: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #d9534f;
             z-index: 10;
         }
         #quiz-box {
@@ -95,15 +103,15 @@ html_code = """
             color: #535353;
         }
         .title {
-            font-size: 42px;
+            font-size: 40px;
             font-weight: bold;
             color: #535353;
             margin-bottom: 15px;
         }
         .instructions {
-            font-size: 16px;
+            font-size: 15px;
             color: #666;
-            max-width: 550px;
+            max-width: 580px;
             line-height: 1.6;
             margin-bottom: 30px;
             background: #fff;
@@ -130,12 +138,15 @@ html_code = """
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO T-REX FULLSCREEN</div>
+            <div class="title">🦖 DINO T-REX (BUFF ITEMS)</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua xương rồng.<br>
-                • Chú T-Rex có đôi tay vươn ra sắc nét và chạy trên màn hình tràn viền rộng rãi.<br>
-                • Trả lời các câu đố trí tuệ định kỳ trên đường chạy để tích lũy điểm!
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy.<br>
+                • <b>Ăn Thực phẩm chức năng / Vật phẩm trên đường[cite: 2]:</b><br>
+                &nbsp;&nbsp;💊 <b>Viên Bổ Năng Lượng:</b> Nhảy cực cao & tăng tốc.<br>
+                &nbsp;&nbsp;🗡️ <b>Kiếm Vô Địch:</b> Tông nát mọi xương rồng.<br>
+                &nbsp;&nbsp;🛡️ <b>Khiên Bảo Vệ:</b> Đỡ 1 lần va chạm.<br>
+                • Giải câu đố trí tuệ định kỳ để ghi điểm tích lũy!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
@@ -144,6 +155,8 @@ html_code = """
             <div>ĐIỂM: <span id="score">00000</span></div>
             <div>CÂU HỎI ĐÃ GIẢI: <span id="puzzle-count">0</span></div>
         </div>
+
+        <div id="buff-status">TRẠNG THÁI: BÌNH THƯỜNG</div>
 
         <div id="quiz-box">
             <div id="quiz-question">Đang tải câu hỏi...</div>
@@ -160,6 +173,7 @@ const introOverlay = document.getElementById('intro-overlay');
 const quizBox = document.getElementById('quiz-box');
 const quizQuestion = document.getElementById('quiz-question');
 const quizOptionsContainer = document.getElementById('quiz-options-container');
+const buffStatusEl = document.getElementById('buff-status');
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -174,6 +188,10 @@ let puzzleSolvedCount = 0;
 let gameSpeed = 7;
 let animFrame = 0;
 
+// Trạng thái Buff
+let activeBuff = null; // 'pill', 'sword', 'shield'
+let buffTimer = 0;
+
 const puzzleBank = [
     { q: "Số tiếp theo trong dãy là gì? 2, 4, 8, 16, ...", options: ["24", "32", "64"], answer: "32" },
     { q: "Cái gì có cổ nhưng không có đầu?", options: ["Cái áo", "Cái chai", "Cái quạt"], answer: "Cái áo" },
@@ -186,6 +204,7 @@ const puzzleBank = [
 const dino = {
     x: 80, y: 0, w: 56, h: 60, vy: 0, gravity: 0.8, jumpPower: -14, grounded: true,
     update(groundY) {
+        let currentJump = activeBuff === 'pill' ? -18 : -14;
         this.vy += this.gravity;
         this.y += this.vy;
         if (this.y > groundY - this.h) {
@@ -195,14 +214,19 @@ const dino = {
         }
     },
     draw() {
-        ctx.fillStyle = '#535353';
         const px = this.x;
         const py = this.y;
-        const s = 1.4; // Tỷ lệ phóng to nét chuẩn Pixel
+        const s = 1.4;
 
         ctx.save();
         ctx.translate(px, py);
         ctx.scale(s, s);
+
+        // Đổi màu khủng long theo trạng thái Buff[cite: 2]
+        if (activeBuff === 'sword') ctx.fillStyle = '#d9534f'; // Màu đỏ võ sĩ
+        else if (activeBuff === 'pill') ctx.fillStyle = '#f0ad4e'; // Màu vàng năng lượng
+        else if (activeBuff === 'shield') ctx.fillStyle = '#0275d8'; // Màu xanh lá chắn
+        else ctx.fillStyle = '#535353';
 
         // 1. Đầu khủng long T-Rex
         ctx.fillRect(20, 0, 18, 14);       
@@ -211,19 +235,27 @@ const dino = {
         ctx.fillRect(28, 3, 3, 3);
 
         // 2. Thân chính
-        ctx.fillStyle = '#535353';
+        if (activeBuff === 'sword') ctx.fillStyle = '#d9534f';
+        else if (activeBuff === 'pill') ctx.fillStyle = '#f0ad4e';
+        else if (activeBuff === 'shield') ctx.fillStyle = '#0275d8';
+        else ctx.fillStyle = '#535353';
+
         ctx.fillRect(10, 14, 18, 16);    
 
-        // 3. ĐÔI TAY T-REX RÕ NÉT VƯƠN RA
-        ctx.fillRect(26, 18, 7, 3); // Cánh tay vươn trước
-        ctx.fillRect(31, 20, 2, 4); // Bàn tay nhỏ rủ xuống
+        // 3. Đôi tay vươn ra (Vẽ thêm vũ khí nếu ăn buff Kiếm)[cite: 2]
+        ctx.fillRect(26, 18, 7, 3); 
+        ctx.fillRect(31, 20, 2, 4); 
+        if (activeBuff === 'sword') {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(33, 12, 14, 4); // Thanh kiếm vươn ra trước[cite: 2]
+        }
 
-        // 4. Đuôi phía sau
+        // 4. Đuôi
         ctx.fillRect(2, 16, 8, 8);
         ctx.fillRect(-2, 18, 4, 6);
         ctx.fillRect(-6, 20, 4, 4);
 
-        // 5. Chân bước nhịp nhàng
+        // 5. Chân bước
         if (animFrame % 18 < 9) {
             ctx.fillRect(10, 30, 5, 12);  
             ctx.fillRect(18, 30, 5, 7);   
@@ -231,11 +263,22 @@ const dino = {
             ctx.fillRect(10, 30, 5, 7);   
             ctx.fillRect(18, 30, 5, 12);  
         }
+
+        // Hào quang khi có giáp
+        if (activeBuff === 'shield') {
+            ctx.strokeStyle = '#0275d8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(20, 20, 26, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
         ctx.restore();
     }
 };
 
 let obstacles = [];
+let items = [];
 let clouds = [];
 
 function spawnObstacle(groundY) {
@@ -250,6 +293,18 @@ function spawnObstacle(groundY) {
     obstacles.push(obs);
 }
 
+function spawnItem(groundY) {
+    let types = ['pill', 'sword', 'shield'];
+    let chosenType = types[Math.floor(Math.random() * types.length)];
+    items.push({
+        x: canvas.width,
+        y: groundY - 80,
+        w: 24,
+        h: 24,
+        type: chosenType
+    });
+}
+
 function spawnCloud() {
     clouds.push({ x: canvas.width, y: Math.random() * 120 + 40, speed: 1.5 });
 }
@@ -258,7 +313,7 @@ window.addEventListener('keydown', e => {
     if (!gameRunning || quizBox.style.display === 'block') return;
     if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         if (dino.grounded) {
-            dino.vy = dino.jumpPower;
+            dino.vy = activeBuff === 'pill' ? -17 : dino.jumpPower;
             dino.grounded = false;
         }
     }
@@ -270,12 +325,16 @@ function startGame() {
     puzzleSolvedCount = 0;
     gameSpeed = 7;
     obstacles = [];
+    items = [];
     clouds = [];
+    activeBuff = null;
+    buffTimer = 0;
     gameRunning = true;
     loop();
 }
 
 let obstacleTimer = 0;
+let itemTimer = 0;
 let cloudTimer = 0;
 let puzzleTriggerDistance = 0;
 
@@ -313,7 +372,17 @@ function loop() {
 
     const groundY = canvas.height - 80;
 
-    // Đường mặt đất đất chạy dài
+    // Quản lý Buff Timer
+    if (buffTimer > 0) {
+        buffTimer--;
+        if (buffTimer === 0) {
+            activeBuff = null;
+            buffStatusEl.innerText = "TRẠNG THÁI: BÌNH THƯỜNG";
+            buffStatusEl.style.color = "#535353";
+        }
+    }
+
+    // Đường mặt đất
     ctx.strokeStyle = '#535353';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -335,6 +404,59 @@ function loop() {
         if (c.x < -70) clouds.splice(i, 1);
     }
 
+    // Sinh vật phẩm / Thực phẩm bổ trợ[cite: 2]
+    itemTimer++;
+    if (itemTimer > 280) {
+        spawnItem(groundY);
+        itemTimer = 0;
+    }
+
+    for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        it.x -= gameSpeed;
+
+        // Vẽ biểu tượng Thực phẩm bổ trợ[cite: 2]
+        ctx.save();
+        if (it.type === 'pill') {
+            ctx.fillStyle = '#f0ad4e';
+            ctx.fillRect(it.x, it.y, 20, 10);
+            ctx.fillStyle = '#d9534f';
+            ctx.fillRect(it.x + 10, it.y, 10, 10);
+        } else if (it.type === 'sword') {
+            ctx.fillStyle = '#d9534f';
+            ctx.fillRect(it.x + 8, it.y, 4, 18);
+            ctx.fillRect(it.x + 4, it.y + 14, 12, 4);
+        } else if (it.type === 'shield') {
+            ctx.fillStyle = '#0275d8';
+            ctx.fillRect(it.x, it.y, 18, 18);
+        }
+        ctx.restore();
+
+        // Ăn vật phẩm[cite: 2]
+        if (
+            dino.x < it.x + it.w &&
+            dino.x + dino.w > it.x &&
+            dino.y < it.y + it.h &&
+            dino.y + dino.h > it.y
+        ) {
+            activeBuff = it.type;
+            buffTimer = 300; // Hiệu lực trong 300 khung hình (~5 giây)
+            if (it.type === 'pill') {
+                buffStatusEl.innerText = "⚡ BUFF: VIÊN NĂNG LƯỢNG (SIÊU NHẢY)";
+                buffStatusEl.style.color = "#f0ad4e";
+            } else if (it.type === 'sword') {
+                buffStatusEl.innerText = "🗡️ BUFF: KIẾM VÔ ĐỊCH (TÔNG NÁT XƯƠNG RỒNG)";
+                buffStatusEl.style.color = "#d9534f";
+            } else if (it.type === 'shield') {
+                buffStatusEl.innerText = "🛡️ BUFF: GIÁP BẢO VỆ (ĐỠ 1 LẦN DÍNH BẪY)";
+                buffStatusEl.style.color = "#0275d8";
+            }
+            items.splice(i, 1);
+        }
+
+        if (it.x < -40) items.splice(i, 1);
+    }
+
     // Sinh chướng ngại vật
     obstacleTimer++;
     if (obstacleTimer > Math.floor(Math.random() * 60 + 80)) {
@@ -350,7 +472,6 @@ function loop() {
         if (obs.type === 'cactus') {
             let cx = obs.x;
             let cy = obs.y;
-            // Xương rồng sắc nét
             ctx.fillRect(cx + 10, cy + 6, 12, 46);
             ctx.fillRect(cx, cy + 18, 10, 12);
             ctx.fillRect(cx, cy + 12, 4, 8);
@@ -367,12 +488,26 @@ function loop() {
             dino.y < obs.y + obs.h - 8 &&
             dino.y + dino.h - 8 > obs.y
         ) {
-            gameRunning = false;
-            introOverlay.style.display = 'flex';
-            document.querySelector('.title').innerText = "💀 GAME OVER";
-            document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
-            document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
-            return;
+            if (activeBuff === 'sword') {
+                // Tông nát chướng ngại vật!
+                obstacles.splice(i, 1);
+                score += 100;
+                continue;
+            } else if (activeBuff === 'shield') {
+                // Đỡ 1 đòn dính bẫy
+                activeBuff = null;
+                buffStatusEl.innerText = "TRẠNG THÁI: BÌNH THƯỜNG";
+                buffStatusEl.style.color = "#535353";
+                obstacles.splice(i, 1);
+                continue;
+            } else {
+                gameRunning = false;
+                introOverlay.style.display = 'flex';
+                document.querySelector('.title').innerText = "💀 GAME OVER";
+                document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
+                document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
+                return;
+            }
         }
 
         if (obs.x < -70) obstacles.splice(i, 1);
