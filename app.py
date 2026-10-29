@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Dino Puzzle Parkour", layout="centered")
+st.set_page_config(page_title="Dino Chrome Puzzle Parkour", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -131,12 +131,12 @@ html_code = """
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO PUZZLE PARKOUR</div>
+            <div class="title">🦖 DINO CHROME PUZZLE</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua chướng ngại vật.<br>
-                • Trên đường chạy, khủng long sẽ gặp các <b>câu hỏi trí tuệ / toán học / logic</b>.<br>
-                • Trả lời đúng để nhận điểm thưởng; trả lời sai sẽ bị trừ điểm!
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy.<br>
+                • Vượt qua các chướng ngại vật xương rồng sắc nét.<br>
+                • Giải các câu đố trí tuệ định kỳ trên đường chạy để ghi điểm!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
@@ -155,7 +155,7 @@ html_code = """
     </div>
 
     <div id="controls-hint">
-        🎮 <b>Nhảy:</b> Space / Mũi tên Lên | Trả lời câu đố bằng cách bấm vào các đáp án.
+        🎮 <b>Nhảy:</b> Space / Mũi tên Lên | Tương tác giải câu đố bằng chuột.
     </div>
 
 <script>
@@ -178,17 +178,17 @@ const puzzleBank = [
     { q: "5 quả táo lấy đi 2 quả, bạn còn mấy quả?", options: ["2 quả", "3 quả", "5 quả"], answer: "2 quả" },
     { q: "Lịch nào dài nhất trong năm?", options: ["Lịch treo tường", "Lịch tường", "Lịch Vạn Niên"], answer: "Lịch Vạn Niên" },
     { q: "Số nguyên tố nhỏ nhất là số mấy?", options: ["0", "1", "2"], answer: "2" },
-    { q: "Từ gì bỏ đầu thì thành bay, bỏ đuôi thành bay?", options: ["Không có", "Máy bay", "Con chim"], answer: "Không có" }
+    { q: "Bệnh gì bác sĩ phải bó tay?", options: ["Gãy tay", "Đau răng", "Ung thư"], answer: "Gãy tay" }
 ];
 
 const dino = {
-    x: 50, y: 165, w: 36, h: 40, vy: 0, gravity: 0.6, jumpPower: -10, grounded: true,
+    x: 50, y: 160, w: 40, h: 44, vy: 0, gravity: 0.6, jumpPower: -10.5, grounded: true,
     update() {
         this.vy += this.gravity;
         this.y += this.vy;
-        if (this.y > 165) {
-            this.y = 165;
-            this.vy = true ? 0 : 0;
+        if (this.y > 160) {
+            this.y = 160;
+            this.vy = 0;
             this.grounded = true;
         }
     },
@@ -196,32 +196,31 @@ const dino = {
         ctx.fillStyle = '#535353';
         const px = this.x;
         const py = this.y;
-        
-        // Vẽ chuẩn hình dáng chú khủng long Pixel chính hãng Google[cite: 1]
-        // Phần đầu và miệng
-        ctx.fillRect(px + 18, py, 16, 12);
-        ctx.fillRect(px + 26, py + 8, 8, 4); // Mồm hở
-        // Mắt trắng
-        ctx.fillStyle = '#f7f7f7';
-        ctx.fillRect(px + 26, py + 3, 3, 3);
-        
-        // Thân khủng long
+        const ps = 4; // Kích thước mỗi khối pixel chuẩn cho tỷ lệ hoàn hảo
+
+        // 1. Phần đầu khủng long chuẩn tỉ lệ Chrome T-Rex[cite: 1]
+        ctx.fillRect(px + 24, py, 16, 12);       // Hộp sọ trên
+        ctx.fillRect(px + 32, py + 8, 8, 4);      // Mõm nhô ra
+        ctx.fillStyle = '#f7f7f7';                 // Mắt khủng long (khoảng trống màu nền)
+        ctx.fillRect(px + 32, py + 3, 3, 3);
+
+        // 2. Phần thân & tay
         ctx.fillStyle = '#535353';
-        ctx.fillRect(px + 10, py + 12, 16, 16);
-        // Tay nhỏ phía trước
-        ctx.fillRect(px + 22, py + 16, 5, 4);
-        
-        // Đuôi phía sau
-        ctx.fillRect(px + 2, py + 14, 8, 8);
-        ctx.fillRect(px, py + 16, 2, 6);
-        
-        // Chân khủng long (có hiệu ứng bước chạy hoạt hoạ)
+        ctx.fillRect(px + 12, py + 12, 16, 16);    // Thân chính
+        ctx.fillRect(px + 28, py + 16, 4, 5);     // Tay ngắn phía trước
+
+        // 3. Phần đuôi
+        ctx.fillRect(px + 4, py + 14, 8, 8);
+        ctx.fillRect(px, py + 16, 4, 6);
+        ctx.fillRect(px - 4, py + 18, 4, 4);
+
+        // 4. Chân khủng long (Hoạt hoạ nhịp bước chạy)
         if (animFrame % 20 < 10) {
-            ctx.fillRect(px + 12, py + 28, 4, 12);
-            ctx.fillRect(px + 20, py + 28, 4, 8);
+            ctx.fillRect(px + 12, py + 28, 4, 12);  // Chân trái bước tới
+            ctx.fillRect(px + 20, py + 28, 4, 8);   // Chân phải nhấc lên
         } else {
-            ctx.fillRect(px + 12, py + 28, 4, 8);
-            ctx.fillRect(px + 20, py + 28, 4, 12);
+            ctx.fillRect(px + 12, py + 28, 4, 8);   // Chân trái nhấc lên
+            ctx.fillRect(px + 20, py + 28, 4, 12);  // Chân phải bước tới
         }
     }
 };
@@ -230,12 +229,12 @@ let obstacles = [];
 let clouds = [];
 
 function spawnObstacle() {
-    let type = Math.random() > 0.5 ? 'cactus' : 'bird';
+    let type = Math.random() > 0.4 ? 'cactus' : 'bird';
     let obs = {
         x: canvas.width,
-        y: type === 'cactus' ? 175 : 130,
-        w: type === 'cactus' ? 18 : 30,
-        h: type === 'cactus' ? 30 : 20,
+        y: type === 'cactus' ? 168 : 125,
+        w: type === 'cactus' ? 22 : 32,
+        h: type === 'cactus' ? 36 : 22,
         type: type
     };
     obstacles.push(obs);
@@ -302,12 +301,12 @@ function loop() {
     animFrame++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Vẽ mặt đất
+    // Vẽ mặt đất chi tiết
     ctx.strokeStyle = '#535353';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, 205);
-    ctx.lineTo(canvas.width, 205);
+    ctx.moveTo(0, 204);
+    ctx.lineTo(canvas.width, 204);
     ctx.stroke();
 
     // Mây trôi
@@ -319,14 +318,14 @@ function loop() {
     for (let i = clouds.length - 1; i >= 0; i--) {
         let c = clouds[i];
         c.x -= c.speed;
-        ctx.fillStyle = '#d0d0d0';
-        ctx.fillRect(c.x, c.y, 40, 12);
+        ctx.fillStyle = '#d8d8d8';
+        ctx.fillRect(c.x, c.y, 42, 12);
         if (c.x < -50) clouds.splice(i, 1);
     }
 
-    // Chướng ngại vật
+    // Sinh chướng ngại vật
     obstacleTimer++;
-    if (obstacleTimer > Math.floor(Math.random() * 60 + 90)) {
+    if (obstacleTimer > Math.floor(Math.random() * 55 + 85)) {
         spawnObstacle();
         obstacleTimer = 0;
     }
@@ -336,14 +335,29 @@ function loop() {
         obs.x -= gameSpeed;
 
         ctx.fillStyle = '#535353';
-        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        if (obs.type === 'cactus') {
+            // Thiết kế cây xương rồng rõ nét, có các nhánh gai góc chi tiết
+            let cx = obs.x;
+            let cy = obs.y;
+            // Thân chính xương rồng
+            ctx.fillRect(cx + 6, cy + 4, 8, 32);
+            // Nhánh trái
+            ctx.fillRect(cx, cy + 12, 6, 8);
+            ctx.fillRect(cx, cy + 8, 3, 6);
+            // Nhánh phải
+            ctx.fillRect(cx + 14, cy + 16, 6, 10);
+            ctx.fillRect(cx + 17, cy + 12, 3, 6);
+        } else {
+            // Chim bay chướng ngại vật trên cao
+            ctx.fillRect(obs.x, obs.y + (animFrame % 15 < 8 ? 0 : 6), obs.w, obs.h);
+        }
 
-        // Kiểm tra va chạm
+        // Kiểm tra va chạm chính xác
         if (
-            dino.x < obs.x + obs.w &&
-            dino.x + dino.w > obs.x &&
-            dino.y < obs.y + obs.h &&
-            dino.y + dino.h > obs.y
+            dino.x < obs.x + obs.w - 4 &&
+            dino.x + dino.w - 4 > obs.x &&
+            dino.y < obs.y + obs.h - 4 &&
+            dino.y + dino.h - 4 > obs.y
         ) {
             gameRunning = false;
             introOverlay.style.display = 'flex';
@@ -363,13 +377,15 @@ function loop() {
     puzzleTriggerDistance++;
     document.getElementById('score').innerText = String(score).padStart(5, '0');
 
-    if (puzzleTriggerDistance > 450) {
+    // Cứ chạy được khoảng cách nhất định sẽ kích hoạt câu hỏi trí tuệ hack não
+    if (puzzleTriggerDistance > 420) {
         puzzleTriggerDistance = 0;
         triggerPuzzle();
         return;
     }
 
-    gameSpeed = 5 + Math.floor(score / 400);
+    // Tăng tốc độ game theo điểm số
+    gameSpeed = 5 + Math.floor(score / 350);
 
     requestAnimationFrame(loop);
 }
