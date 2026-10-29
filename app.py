@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Dino T-Rex Helicopter Remote Edition", layout="wide")
+st.set_page_config(page_title="Dino T-Rex Giant Pill Edition", layout="wide")
 
 html_code = """
 <!DOCTYPE html>
@@ -50,7 +50,7 @@ html_code = """
             left: 30px;
             font-size: 18px;
             font-weight: bold;
-            color: #0275d8;
+            color: #e52521;
             z-index: 10;
         }
         #quiz-box {
@@ -105,7 +105,7 @@ html_code = """
         .title {
             font-size: 40px;
             font-weight: bold;
-            color: #535353;
+            color: #e52521;
             margin-bottom: 15px;
         }
         .instructions {
@@ -126,23 +126,24 @@ html_code = """
             font-weight: bold;
             font-family: 'Courier New', Courier, monospace;
             color: #fff;
-            background: #535353;
+            background: #e52521;
             border: none;
             border-radius: 6px;
             cursor: pointer;
         }
-        #start-btn:hover { background: #333; transform: scale(1.05); }
+        #start-btn:hover { background: #cc0000; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO HELICOPTER REMOTE</div>
+            <div class="title">💊 DINO GIANT PILL MODE</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy vượt chướng ngại vật.<br>
-                • 📡 <b>Lụm Remote Điều Khiển:</b> Khủng long sẽ leo lên trực thăng bay vút lên trời trong <b>10 giây</b> và tự động hạ cánh an toàn!<br>
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua chướng ngại vật.<br>
+                • 💊 <b>Lụm Viên Thuốc Phóng Đại:</b> Khủng long sẽ <b>TO RA GẤP ĐÔI</b>, càn quét húc nát vụn tất cả xương rồng & bất khả xâm phạm trong <b>10 giây</b>!<br>
+                • 📡 <b>Lụm Remote Trực Thăng:</b> Gọi trực thăng đến đón bay trên bầu trời!<br>
                 • Trả lời các câu đố trí tuệ định kỳ trên đường chạy để tích lũy điểm!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
@@ -185,9 +186,12 @@ let puzzleSolvedCount = 0;
 let gameSpeed = 7;
 let animFrame = 0;
 
-// Trạng thái bay bằng Trực Thăng
+// Trạng thái Buff
+let isGiant = false;
+let giantTimer = 0; // 600 frames = 10 giây
+
 let isFlying = false;
-let flyTimer = 0; // 600 frames = 10 giây
+let flyTimer = 0;
 let heliY = 0;
 let targetHeliY = 0;
 
@@ -203,16 +207,16 @@ const puzzleBank = [
 const dino = {
     x: 80, y: 0, w: 56, h: 60, vy: 0, gravity: 0.8, jumpPower: -14, grounded: true,
     update(groundY) {
+        let currentHeight = isGiant ? 110 : 60;
         if (isFlying) {
-            // Khi đang bay trực thăng
             this.y += (heliY - 40 - this.y) * 0.1;
             return;
         }
 
         this.vy += this.gravity;
         this.y += this.vy;
-        if (this.y > groundY - this.h) {
-            this.y = groundY - this.h;
+        if (this.y > groundY - currentHeight) {
+            this.y = groundY - currentHeight;
             this.vy = 0;
             this.grounded = true;
         }
@@ -220,13 +224,19 @@ const dino = {
     draw() {
         const px = this.x;
         const py = this.y;
-        const s = 1.4;
+        // Phóng to gấp đôi tỷ lệ khi ăn viên thuốc khổng lồ
+        const s = isGiant ? 2.6 : 1.4;
 
         ctx.save();
         ctx.translate(px, py);
         ctx.scale(s, s);
 
-        ctx.fillStyle = '#535353';
+        // Màu đỏ rực lực sĩ khi khổng lồ
+        if (isGiant) {
+            ctx.fillStyle = '#e52521';
+        } else {
+            ctx.fillStyle = '#535353';
+        }
 
         // 1. Đầu khủng long T-Rex
         ctx.fillRect(20, 0, 18, 14);       
@@ -235,7 +245,8 @@ const dino = {
         ctx.fillRect(28, 3, 3, 3);
 
         // 2. Thân chính
-        ctx.fillStyle = '#535353';
+        if (isGiant) ctx.fillStyle = '#e52521';
+        else ctx.fillStyle = '#535353';
         ctx.fillRect(10, 14, 18, 16);    
 
         // 3. Đôi tay vươn ra
@@ -267,16 +278,13 @@ function drawHelicopter(x, y) {
     ctx.save();
     ctx.translate(x, y);
 
-    // Bánh quạt quay
     ctx.fillStyle = '#333';
     let rotorOffset = (animFrame % 4) * 8;
     ctx.fillRect(-35 + rotorOffset, -20, 70 - rotorOffset * 2, 4);
 
-    // Trục cánh quạt
     ctx.fillRect(-2, -16, 4, 6);
 
-    // Thân trực thăng
-    ctx.fillStyle = '#2b5b54'; // Màu xanh quân sự mờ
+    ctx.fillStyle = '#2b5b54';
     ctx.beginPath();
     ctx.ellipse(0, 0, 38, 22, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -284,18 +292,15 @@ function drawHelicopter(x, y) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Cửa kính trực thăng
     ctx.fillStyle = '#8ce8ff';
     ctx.beginPath();
     ctx.arc(16, -4, 12, -Math.PI / 2, Math.PI / 2);
     ctx.fill();
 
-    // Đuôi trực thăng
     ctx.fillStyle = '#2b5b54';
     ctx.fillRect(-60, -6, 30, 10);
     ctx.fillRect(-65, -16, 8, 20);
 
-    // Chân hạ cánh
     ctx.fillStyle = '#333';
     ctx.fillRect(-22, 20, 44, 4);
     ctx.fillRect(-12, 16, 4, 6);
@@ -305,7 +310,7 @@ function drawHelicopter(x, y) {
 }
 
 let obstacles = [];
-let remotes = [];
+let items = [];
 let clouds = [];
 
 function spawnObstacle(groundY) {
@@ -320,12 +325,14 @@ function spawnObstacle(groundY) {
     obstacles.push(obs);
 }
 
-function spawnRemote(groundY) {
-    remotes.push({
+function spawnItem(groundY) {
+    let type = Math.random() > 0.5 ? 'giant_pill' : 'remote';
+    items.push({
         x: canvas.width,
         y: groundY - 70,
-        w: 26,
-        h: 30
+        w: 28,
+        h: 28,
+        type: type
     });
 }
 
@@ -337,7 +344,7 @@ window.addEventListener('keydown', e => {
     if (!gameRunning || quizBox.style.display === 'block' || isFlying) return;
     if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         if (dino.grounded) {
-            dino.vy = dino.jumpPower;
+            dino.vy = isGiant ? -16 : dino.jumpPower;
             dino.grounded = false;
         }
     }
@@ -349,8 +356,10 @@ function startGame() {
     puzzleSolvedCount = 0;
     gameSpeed = 7;
     obstacles = [];
-    remotes = [];
+    items = [];
     clouds = [];
+    isGiant = false;
+    giantTimer = 0;
     isFlying = false;
     flyTimer = 0;
     gameRunning = true;
@@ -358,7 +367,7 @@ function startGame() {
 }
 
 let obstacleTimer = 0;
-let remoteTimer = 0;
+let itemTimer = 0;
 let cloudTimer = 0;
 let puzzleTriggerDistance = 0;
 
@@ -396,17 +405,31 @@ function loop() {
 
     const groundY = canvas.height - 80;
 
+    // Quản lý Trạng thái Khổng Lồ 10 Giây
+    if (isGiant) {
+        giantTimer--;
+        let secondsLeft = Math.ceil(giantTimer / 60);
+        buffStatusEl.innerText = `💪 KHỔNG LỒ HÚC NÁT XƯƠNG RỒNG: ${secondsLeft}s`;
+        buffStatusEl.style.color = "#e52521";
+
+        if (giantTimer <= 0) {
+            isGiant = false;
+            buffStatusEl.innerText = "TRẠNG THÁI: CHẠY BỘ";
+            buffStatusEl.style.color = "#535353";
+        }
+    }
+
     // Quản lý Trạng thái Trực Thăng 10 Giây
     if (isFlying) {
         flyTimer--;
         let secondsLeft = Math.ceil(flyTimer / 60);
-        buffStatusEl.innerText = `🚁 ĐANG LÁI TRỰC THĂNG BAY TRÊN TRỜI: ${secondsLeft}s`;
+        buffStatusEl.innerText = `🚁 LÁI TRỰC THĂNG TRÊN TRỜI: ${secondsLeft}s`;
         buffStatusEl.style.color = "#0275d8";
 
         if (flyTimer > 60) {
-            targetHeliY = groundY - 220; // Bay trên cao
+            targetHeliY = groundY - 220;
         } else {
-            targetHeliY = groundY - 50; // Từ từ hạ cánh 1 giây cuối
+            targetHeliY = groundY - 50;
         }
         heliY += (targetHeliY - heliY) * 0.08;
 
@@ -439,45 +462,59 @@ function loop() {
         if (c.x < -70) clouds.splice(i, 1);
     }
 
-    // Sinh Remote Điều Khiển Trực Thăng
-    remoteTimer++;
-    if (remoteTimer > 350 && !isFlying) {
-        spawnRemote(groundY);
-        remoteTimer = 0;
+    // Sinh Vật Phẩm
+    itemTimer++;
+    if (itemTimer > 320 && !isGiant && !isFlying) {
+        spawnItem(groundY);
+        itemTimer = 0;
     }
 
-    for (let i = remotes.length - 1; i >= 0; i--) {
-        let rm = remotes[i];
-        rm.x -= gameSpeed;
+    for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        it.x -= gameSpeed;
 
-        // Vẽ chiếc Remote Điều Khiển
         ctx.save();
-        ctx.fillStyle = '#333';
-        ctx.fillRect(rm.x, rm.y, 22, 28);
-        // Anten
-        ctx.fillRect(rm.x + 9, rm.y - 8, 4, 8);
-        // Màn hình remote
-        ctx.fillStyle = '#00ffcc';
-        ctx.fillRect(rm.x + 3, rm.y + 3, 16, 10);
-        // Nút bấm đỏ
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(rm.x + 6, rm.y + 16, 10, 8);
+        if (it.type === 'giant_pill') {
+            // Vẽ Viên Thuốc Phóng Đại Đỏ-Trắng
+            ctx.fillStyle = '#e52521';
+            ctx.fillRect(it.x, it.y, 14, 20);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(it.x + 14, it.y, 14, 20);
+            ctx.strokeStyle = '#333';
+            ctx.strokeRect(it.x, it.y, 28, 20);
+        } else {
+            // Vẽ Remote Trực Thăng
+            ctx.fillStyle = '#333';
+            ctx.fillRect(it.x, it.y, 22, 28);
+            ctx.fillRect(it.x + 9, it.y - 8, 4, 8);
+            ctx.fillStyle = '#00ffcc';
+            ctx.fillRect(it.x + 3, it.y + 3, 16, 10);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(it.x + 6, it.y + 16, 10, 8);
+        }
         ctx.restore();
 
-        // Lụm Remote
+        // Lụm Vật Phẩm
+        let dWidth = isGiant ? 100 : 56;
+        let dHeight = isGiant ? 110 : 60;
         if (
-            dino.x < rm.x + rm.w &&
-            dino.x + dino.w > rm.x &&
-            dino.y < rm.y + rm.h &&
-            dino.y + dino.h > rm.y
+            dino.x < it.x + it.w &&
+            dino.x + dWidth > it.x &&
+            dino.y < it.y + it.h &&
+            dino.y + dHeight > it.y
         ) {
-            isFlying = true;
-            flyTimer = 600; // 10 giây (600 khung hình)
-            heliY = dino.y;
-            remotes.splice(i, 1);
+            if (it.type === 'giant_pill') {
+                isGiant = true;
+                giantTimer = 600; // 10 giây
+            } else {
+                isFlying = true;
+                flyTimer = 600; // 10 giây
+                heliY = dino.y;
+            }
+            items.splice(i, 1);
         }
 
-        if (rm.x < -40) remotes.splice(i, 1);
+        if (it.x < -40) items.splice(i, 1);
     }
 
     // Sinh chướng ngại vật
@@ -504,20 +541,30 @@ function loop() {
             ctx.fillRect(obs.x, obs.y + (animFrame % 14 < 7 ? 0 : 8), obs.w, obs.h);
         }
 
-        // Kiểm tra va chạm (Nếu đang bay trực thăng thì bỏ qua mọi va chạm)
+        // KÍCH THƯỚC VÙNG VA CHẠM THAY ĐỔI THEO KHỔNG LỒ HÓA
+        let checkW = isGiant ? 90 : 48;
+        let checkH = isGiant ? 100 : 52;
+
         if (!isFlying) {
             if (
-                dino.x < obs.x + obs.w - 8 &&
-                dino.x + dino.w - 8 > obs.x &&
-                dino.y < obs.y + obs.h - 8 &&
-                dino.y + dino.h - 8 > obs.y
+                dino.x < obs.x + obs.w - 6 &&
+                dino.x + checkW > obs.x &&
+                dino.y < obs.y + obs.h - 6 &&
+                dino.y + checkH > obs.y
             ) {
-                gameRunning = false;
-                introOverlay.style.display = 'flex';
-                document.querySelector('.title').innerText = "💀 GAME OVER";
-                document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
-                document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
-                return;
+                if (isGiant) {
+                    // HÚC NÁT VỤN CÂY XƯƠNG RỒNG KHI KHỔNG LỒ!
+                    obstacles.splice(i, 1);
+                    score += 150;
+                    continue;
+                } else {
+                    gameRunning = false;
+                    introOverlay.style.display = 'flex';
+                    document.querySelector('.title').innerText = "💀 GAME OVER";
+                    document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
+                    document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
+                    return;
+                }
             }
         }
 
