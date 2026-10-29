@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Dino T-Rex Meme Ending Edition", layout="wide")
+st.set_page_config(page_title="Dino T-Rex Boss & Meme Ending", layout="wide")
 
 html_code = """
 <!DOCTYPE html>
@@ -50,7 +50,7 @@ html_code = """
             left: 30px;
             font-size: 18px;
             font-weight: bold;
-            color: #0275d8;
+            color: #e52521;
             z-index: 10;
         }
         #quiz-box {
@@ -138,13 +138,13 @@ html_code = """
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO MEME ENDING EDITION</div>
+            <div class="title">🦖 DINO BOSS & MEME ENDING</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua chướng ngại vật.<br>
-                • Lụm các thực phẩm chức năng: <b>Trực thăng, Thuốc khổng lồ, Kiếm, Giáp</b> để sinh tồn[cite: 2].<br>
-                • 🏆 <b>Mục tiêu:</b> Chạy đến mốc kết thúc để xem đoạn kết "cắm sừng" cực hài hước y hệt meme[cite: 3]!<br>
-                • Giải câu đố trí tuệ định kỳ trên đường chạy để tích lũy điểm!
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy.<br>
+                • Lụm thực phẩm chức năng: <b>Trực thăng, Thuốc khổng lồ, Kiếm, Giáp</b>[cite: 2].<br>
+                • ⚔️ <b>Mốc 1000 Điểm:</b> Chạm mốc 1000 điểm sẽ bước vào trận chiến tiêu diệt **Boss Xương Rồng Khổng Lồ** bằng cách giải câu đố trí tuệ!<br>
+                • 🏆 Sau khi thắng Boss, bạn sẽ xem được đoạn kết "cắm sừng" cực hài hước[cite: 3]!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
@@ -191,9 +191,11 @@ let buffTimer = 0;
 let heliY = 0;
 let targetHeliY = 0;
 
-// Trạng thái Đoạn Kết Meme
+// Trạng thái Boss Chiến & Đoạn Kết
+let bossFightActive = false;
+let bossHP = 3; // Cần trả lời đúng 3 câu để hạ Boss
 let endingTriggered = false;
-let endingStep = 0; // 0: chạy tới, 1: đứng hình ???, 2: khóc thút thít
+let endingStep = 0; 
 let endingTimer = 0;
 
 const puzzleBank = [
@@ -262,11 +264,8 @@ const dino = {
             ctx.fillRect(10, 30, 5, 8);  
             ctx.fillRect(18, 30, 5, 8);   
         } else if (endingTriggered) {
-            // Đứng im chân khi gặp đoạn kết
             ctx.fillRect(10, 30, 5, 10);  
             ctx.fillRect(18, 30, 5, 10);
-            
-            // Vẽ giọt nước mắt khóc thút thít ở bước cuối y hệt ảnh meme
             if (endingStep >= 2) {
                 ctx.fillStyle = '#0275d8';
                 ctx.fillRect(32, 7, 3, 4);
@@ -291,28 +290,48 @@ const dino = {
     }
 };
 
+function drawBoss(groundY) {
+    ctx.save();
+    let bx = canvas.width - 250;
+    let by = groundY - 120;
+    ctx.fillStyle = '#228b22'; // Màu xanh trùm xương rồng
+    ctx.fillRect(bx, by, 70, 120);
+    // Nhánh phụ của Boss
+    ctx.fillRect(bx - 20, by + 40, 25, 20);
+    ctx.fillRect(bx - 20, by + 20, 10, 30);
+    ctx.fillRect(bx + 65, by + 50, 25, 20);
+    ctx.fillRect(bx + 80, by + 30, 10, 30);
+
+    // Máu Boss
+    ctx.fillStyle = '#333';
+    ctx.fillRect(bx - 15, by - 35, 100, 14);
+    ctx.fillStyle = '#e52521';
+    ctx.fillRect(bx - 13, by - 33, (bossHP / 3) * 96, 10);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Courier New';
+    ctx.fillText(`BOSS HP: ${bossHP}/3`, bx - 5, by - 23);
+    ctx.restore();
+}
+
 function drawOtherDinos(groundY) {
     ctx.save();
     ctx.fillStyle = '#535353';
-    // Hai con khủng long đang đứng chờ sẵn ở cuối đường
     let dx1 = canvas.width - 250;
     let dx2 = canvas.width - 180;
     let dy = groundY - 42;
 
-    // Con thứ nhất
     ctx.fillRect(dx1 + 10, dy, 18, 14);
     ctx.fillRect(dx1 + 10, dy + 14, 18, 16);
     ctx.fillRect(dx1 + 2, dy + 16, 8, 8);
     ctx.fillRect(dx1 + 12, dy + 30, 5, 12);
     ctx.fillRect(dx1 + 20, dy + 30, 5, 12);
 
-    // Con thứ hai
     ctx.fillRect(dx2 + 10, dy, 18, 14);
     ctx.fillRect(dx2 + 10, dy + 14, 18, 16);
     ctx.fillRect(dx2 + 2, dy + 16, 8, 8);
     ctx.fillRect(dx2 + 12, dy + 30, 5, 12);
     ctx.fillRect(dx2 + 20, dy + 30, 5, 12);
-
     ctx.restore();
 }
 
@@ -349,6 +368,7 @@ let items = [];
 let clouds = [];
 
 function spawnObstacle(groundY) {
+    if (bossFightActive || endingTriggered) return;
     let type = Math.random() > 0.4 ? 'cactus' : 'bird';
     let obs = {
         x: canvas.width,
@@ -361,6 +381,7 @@ function spawnObstacle(groundY) {
 }
 
 function spawnItem(groundY) {
+    if (bossFightActive || endingTriggered) return;
     let types = ['heli', 'giant', 'sword', 'shield'];
     let chosenType = types[Math.floor(Math.random() * types.length)];
     items.push({
@@ -377,7 +398,7 @@ function spawnCloud() {
 }
 
 window.addEventListener('keydown', e => {
-    if (!gameRunning || quizBox.style.display === 'block' || activeBuff === 'heli' || endingTriggered) return;
+    if (!gameRunning || quizBox.style.display === 'block' || activeBuff === 'heli' || endingTriggered || bossFightActive) return;
     if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         if (dino.grounded) {
             dino.vy = activeBuff === 'giant' ? -16 : dino.jumpPower;
@@ -396,6 +417,8 @@ function startGame() {
     clouds = [];
     activeBuff = null;
     buffTimer = 0;
+    bossFightActive = false;
+    bossHP = 3;
     endingTriggered = false;
     endingStep = 0;
     endingTimer = 0;
@@ -408,10 +431,10 @@ let itemTimer = 0;
 let cloudTimer = 0;
 let puzzleTriggerDistance = 0;
 
-function triggerPuzzle() {
+function triggerPuzzle(isBossQuestion = false) {
     gameRunning = false; 
     let randomPuzzle = puzzleBank[Math.floor(Math.random() * puzzleBank.length)];
-    quizQuestion.innerText = randomPuzzle.q;
+    quizQuestion.innerText = isBossQuestion ? `⚔️ CHIẾN ĐẤU BOSS (HP Boss: ${bossHP}/3)\\n` + randomPuzzle.q : randomPuzzle.q;
     quizOptionsContainer.innerHTML = '';
     
     randomPuzzle.options.forEach(opt => {
@@ -423,8 +446,19 @@ function triggerPuzzle() {
                 score += 500;
                 puzzleSolvedCount++;
                 document.getElementById('puzzle-count').innerText = puzzleSolvedCount;
+                if (isBossQuestion) {
+                    bossHP--;
+                    if (bossHP <= 0) {
+                        bossFightActive = false;
+                        endingTriggered = true; // Hạ Boss xong vào đoạn kết Meme[cite: 3]
+                        endingStep = 1;
+                    }
+                }
             } else {
                 score = Math.max(0, score - 200);
+                if (isBossQuestion) {
+                    // Trả lời sai khi đánh boss thì bị trừ điểm nhưng giữ nguyên máu boss
+                }
             }
             quizBox.style.display = 'none';
             gameRunning = true;
@@ -442,31 +476,31 @@ function loop() {
 
     const groundY = canvas.height - 80;
 
-    // KÍCH HOẠT ĐOẠN KẾT MEME KHI ĐẠT ĐIỂM SỐ 3000 HOẶC QUÃNG ĐƯỜNG XA
-    if (score > 3000 && !endingTriggered) {
-        endingTriggered = true;
-        endingStep = 1; // Bước 1: Dừng lại với dấu hỏi ???
-        obstacles = []; // Xóa hết chướng ngại vật
+    // KÍCH HOẠT TRẬN CHIẾN BOSS KHI ĐẠT 1000 ĐIỂM
+    if (score >= 1000 && !bossFightActive && !endingTriggered) {
+        bossFightActive = true;
+        obstacles = [];
         items = [];
+        triggerPuzzle(true); // Mở ngay câu hỏi đánh Boss
+        return;
     }
 
     if (endingTriggered) {
         endingTimer++;
         if (endingTimer > 120 && endingStep === 1) {
-            endingStep = 2; // Bước 2: Chuyển sang khóc thút thít y hệt ảnh meme[cite: 3]
+            endingStep = 2; // Khóc thút thít y hệt meme[cite: 3]
         }
         if (endingTimer > 300) {
             gameRunning = false;
             introOverlay.style.display = 'flex';
-            document.querySelector('.title').innerText = "💔 ĐOẠN KẾT KHỦNG LONG";
-            document.querySelector('.instructions').innerText = `Bạn đã hoàn thành game và chứng kiến màn "cắm sừng" huyền thoại[cite: 3]!\nĐiểm tổng kết: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
+            document.querySelector('.title').innerText = "🏆 CHIẾN THẮNG BOSS & MEME ENDING";
+            document.querySelector('.instructions').innerText = `Bạn đã tiêu diệt Boss Xương Rồng và chứng kiến màn kết thúc huyền thoại[cite: 3]!\nĐiểm tổng kết: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
             document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI TỪ ĐẦU";
             return;
         }
     }
 
-    // Quản lý Buff
-    if (buffTimer > 0 && !endingTriggered) {
+    if (buffTimer > 0 && !endingTriggered && !bossFightActive) {
         buffTimer--;
         let secondsLeft = Math.ceil(buffTimer / 60);
 
@@ -516,24 +550,33 @@ function loop() {
         if (c.x < -70) clouds.splice(i, 1);
     }
 
-    // Nếu đang ở đoạn kết, vẽ khung cảnh 2 con khủng long chờ sẵn và dấu hỏi ???[cite: 3]
-    if (endingTriggered) {
+    if (bossFightActive) {
+        drawBoss(groundY);
+        buffStatusEl.innerText = "⚔️ ĐANG GIAO TRANH VỚI BOSS XƯƠNG RỒNG!";
+        buffStatusEl.style.color = "#228b22";
+
+        // Định kỳ bật câu hỏi đánh Boss nếu đứng gần
+        if (Math.random() < 0.02) {
+            triggerPuzzle(true);
+            return;
+        }
+    } else if (endingTriggered) {
         drawOtherDinos(groundY);
-        
-        // Vẽ chữ ??? trên đầu T-Rex ở bước 1[cite: 3]
+        buffStatusEl.innerText = "💔 ĐOẠN KẾT MEME KHỦNG LONG";
+        buffStatusEl.style.color = "#e52521";
+
         if (endingStep === 1) {
             ctx.fillStyle = '#000';
             ctx.font = 'bold 24px Courier New';
             ctx.fillText("???", dino.x + 10, dino.y - 15);
         }
-        // Vẽ chữ thông báo khóc ở bước 2
         if (endingStep === 2) {
             ctx.fillStyle = '#e52521';
             ctx.font = 'bold 20px Courier New';
             ctx.fillText("(Khóc thút thít... 😭)", dino.x - 10, dino.y - 20);
         }
     } else {
-        // Sinh vật phẩm bình thường
+        // Sinh vật phẩm và chướng ngại vật bình thường
         itemTimer++;
         if (itemTimer > 300 && !activeBuff) {
             spawnItem(groundY);
@@ -585,7 +628,6 @@ function loop() {
             if (it.x < -40) items.splice(i, 1);
         }
 
-        // Sinh chướng ngại vật
         obstacleTimer++;
         if (obstacleTimer > Math.floor(Math.random() * 60 + 80)) {
             spawnObstacle(groundY);
@@ -643,27 +685,25 @@ function loop() {
 
             if (obs.x < -70) obstacles.splice(i, 1);
         }
-    }
 
-    dino.update(groundY);
-    dino.draw();
-
-    if (activeBuff === 'heli' && !endingTriggered) {
-        drawHelicopter(dino.x + 20, heliY);
-    }
-
-    if (!endingTriggered) {
         score += 1;
         puzzleTriggerDistance++;
         document.getElementById('score').innerText = String(score).padStart(5, '0');
 
         if (puzzleTriggerDistance > 500) {
             puzzleTriggerDistance = 0;
-            triggerPuzzle();
+            triggerPuzzle(false);
             return;
         }
 
         gameSpeed = 7 + Math.floor(score / 400);
+    }
+
+    dino.update(groundY);
+    dino.draw();
+
+    if (activeBuff === 'heli' && !endingTriggered && !bossFightActive) {
+        drawHelicopter(dino.x + 20, heliY);
     }
 
     requestAnimationFrame(loop);
