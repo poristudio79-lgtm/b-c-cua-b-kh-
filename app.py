@@ -136,7 +136,7 @@ html_code = """
                 🎮 <b>Cách chơi:</b><br>
                 • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua chướng ngại vật.<br>
                 • Trên đường chạy, khủng long sẽ gặp các <b>câu hỏi trí tuệ / toán học / logic</b>.<br>
-                • Trả lời đúng để nhận điểm thưởng và tăng tốc độ; trả lời sai sẽ bị giảm điểm!
+                • Trả lời đúng để nhận điểm thưởng; trả lời sai sẽ bị trừ điểm!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
@@ -172,7 +172,6 @@ let puzzleSolvedCount = 0;
 let gameSpeed = 5;
 let animFrame = 0;
 
-// Dữ liệu câu hỏi trí tuệ / logic / toán học
 const puzzleBank = [
     { q: "Số tiếp theo trong dãy là gì? 2, 4, 8, 16, ...", options: ["24", "32", "64"], answer: "32" },
     { q: "Cái gì có cổ nhưng không có đầu?", options: ["Cái áo", "Cái chai", "Cái quạt"], answer: "Cái áo" },
@@ -183,33 +182,46 @@ const puzzleBank = [
 ];
 
 const dino = {
-    x: 50, y: 170, w: 30, h: 35, vy: 0, gravity: 0.6, jumpPower: -10, grounded: true,
+    x: 50, y: 165, w: 36, h: 40, vy: 0, gravity: 0.6, jumpPower: -10, grounded: true,
     update() {
         this.vy += this.gravity;
         this.y += this.vy;
-        if (this.y > 170) {
-            this.y = 170;
-            this.vy = 0;
+        if (this.y > 165) {
+            this.y = 165;
+            this.vy = true ? 0 : 0;
             this.grounded = true;
         }
     },
     draw() {
         ctx.fillStyle = '#535353';
+        const px = this.x;
+        const py = this.y;
+        
+        // Vẽ chuẩn hình dáng chú khủng long Pixel chính hãng Google[cite: 1]
+        // Phần đầu và miệng
+        ctx.fillRect(px + 18, py, 16, 12);
+        ctx.fillRect(px + 26, py + 8, 8, 4); // Mồm hở
+        // Mắt trắng
+        ctx.fillStyle = '#f7f7f7';
+        ctx.fillRect(px + 26, py + 3, 3, 3);
+        
         // Thân khủng long
-        ctx.fillRect(this.x, this.y + 10, 26, 20);
-        // Đầu khủng long
-        ctx.fillRect(this.x + 16, this.y, 14, 14);
-        // Mắt
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(this.x + 24, this.y + 3, 3, 3);
-        // Chân
         ctx.fillStyle = '#535353';
+        ctx.fillRect(px + 10, py + 12, 16, 16);
+        // Tay nhỏ phía trước
+        ctx.fillRect(px + 22, py + 16, 5, 4);
+        
+        // Đuôi phía sau
+        ctx.fillRect(px + 2, py + 14, 8, 8);
+        ctx.fillRect(px, py + 16, 2, 6);
+        
+        // Chân khủng long (có hiệu ứng bước chạy hoạt hoạ)
         if (animFrame % 20 < 10) {
-            ctx.fillRect(this.x + 4, this.y + 30, 6, 8);
-            ctx.fillRect(this.x + 16, this.y + 30, 6, 5);
+            ctx.fillRect(px + 12, py + 28, 4, 12);
+            ctx.fillRect(px + 20, py + 28, 4, 8);
         } else {
-            ctx.fillRect(this.x + 4, this.y + 30, 6, 5);
-            ctx.fillRect(this.x + 16, this.y + 30, 6, 8);
+            ctx.fillRect(px + 12, py + 28, 4, 8);
+            ctx.fillRect(px + 20, py + 28, 4, 12);
         }
     }
 };
@@ -222,7 +234,7 @@ function spawnObstacle() {
     let obs = {
         x: canvas.width,
         y: type === 'cactus' ? 175 : 130,
-        w: type === 'cactus' ? 20 : 30,
+        w: type === 'cactus' ? 18 : 30,
         h: type === 'cactus' ? 30 : 20,
         type: type
     };
@@ -259,7 +271,7 @@ let cloudTimer = 0;
 let puzzleTriggerDistance = 0;
 
 function triggerPuzzle() {
-    gameRunning = false; // Tạm dừng game để giải đố
+    gameRunning = false; 
     let randomPuzzle = puzzleBank[Math.floor(Math.random() * puzzleBank.length)];
     quizQuestion.innerText = randomPuzzle.q;
     quizOptionsContainer.innerHTML = '';
@@ -307,7 +319,7 @@ function loop() {
     for (let i = clouds.length - 1; i >= 0; i--) {
         let c = clouds[i];
         c.x -= c.speed;
-        ctx.fillStyle = '#e0e0e0';
+        ctx.fillStyle = '#d0d0d0';
         ctx.fillRect(c.x, c.y, 40, 12);
         if (c.x < -50) clouds.splice(i, 1);
     }
@@ -323,7 +335,7 @@ function loop() {
         let obs = obstacles[i];
         obs.x -= gameSpeed;
 
-        ctx.fillStyle = '#e52521';
+        ctx.fillStyle = '#535353';
         ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
         // Kiểm tra va chạm
@@ -336,7 +348,7 @@ function loop() {
             gameRunning = false;
             introOverlay.style.display = 'flex';
             document.querySelector('.title').innerText = "💀 GAME OVER";
-            document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
+            document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\\nSố câu đố giải được: ${puzzleSolvedCount}`;
             document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
             return;
         }
@@ -351,14 +363,12 @@ function loop() {
     puzzleTriggerDistance++;
     document.getElementById('score').innerText = String(score).padStart(5, '0');
 
-    // Cứ chạy được một quãng đường sẽ kích hoạt câu hỏi trí tuệ
     if (puzzleTriggerDistance > 450) {
         puzzleTriggerDistance = 0;
         triggerPuzzle();
         return;
     }
 
-    // Tăng dần độ khó theo điểm số
     gameSpeed = 5 + Math.floor(score / 400);
 
     requestAnimationFrame(loop);
