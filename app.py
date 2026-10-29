@@ -23,7 +23,7 @@
             overflow: hidden;
         }
         h1 {
-            font-size: 16px;
+            font-size: 14px;
             color: #535353;
             margin-bottom: 10px;
             text-align: center;
@@ -48,7 +48,7 @@
             font-size: 10px;
             color: #535353;
         }
-        /* Màn hình Boss / Trắc nghiệm */
+        /* Màn hình Đấu Boss / Trắc nghiệm */
         #boss-modal {
             display: none;
             position: absolute;
@@ -67,18 +67,18 @@
         }
         #boss-modal h2 {
             color: #ff4757;
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-size: 13px;
+            margin-bottom: 8px;
         }
         .boss-status {
-            font-size: 10px;
-            margin-bottom: 15px;
+            font-size: 9px;
+            margin-bottom: 12px;
             color: #ffa502;
         }
         #question-box {
-            font-size: 11px;
+            font-size: 10px;
             margin-bottom: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
             max-width: 700px;
         }
         .answers-grid {
@@ -94,7 +94,7 @@
             color: #fff;
             padding: 10px;
             font-family: 'Press Start 2P', monospace;
-            font-size: 9px;
+            font-size: 8px;
             cursor: pointer;
             border-radius: 4px;
             transition: 0.2s;
@@ -111,7 +111,7 @@
             background: rgba(53, 53, 53, 0.9);
             color: #fff;
             padding: 8px 15px;
-            font-size: 9px;
+            font-size: 8px;
             border-radius: 20px;
             display: none;
             z-index: 5;
@@ -120,14 +120,14 @@
 </head>
 <body>
 
-    <h1>CHROME T-REX: BOSS XƯƠNG RỒNG & MÁY BAY</h1>
+    <h1>CHROME T-REX: ĐẤU BOSS XƯƠNG RỒNG (1000 MÉT)</h1>
     <div class="game-container">
         <div id="notification">ĐÃ LỤM REMOTE! MÁY BAY XUẤT PHÁT (10s)!</div>
         
         <!-- Modal đánh boss / Trả lời câu hỏi -->
         <div id="boss-modal">
-            <h2>ĐẤU BOSS XƯƠNG RỒNG!</h2>
-            <div class="boss-status" id="boss-hp-text">Máu Boss Xương Rồng: 3 / 3</div>
+            <h2>ĐẠT 1000 MÉT - ĐẤU BOSS XƯƠNG RỒNG!</h2>
+            <div class="boss-status" id="boss-hp-text">Máu Boss Xương Rồng: 3 / 3 (Cần 3 câu đúng liên tiếp)</div>
             <div id="question-box">Đang tải câu hỏi...</div>
             <div class="answers-grid" id="answers-container"></div>
         </div>
@@ -136,8 +136,8 @@
     </div>
     
     <div class="ui-panel">
-        <div>HI: <span id="highScore">00000</span></div>
-        <div>SC: <span id="currentScore">00000</span></div>
+        <div>HI: <span id="highScore">00000</span> M</div>
+        <div>MET: <span id="currentScore">00000</span> M</div>
     </div>
 
     <script>
@@ -152,8 +152,7 @@
         const answersContainer = document.getElementById("answers-container");
         const notificationEl = document.getElementById("notification");
 
-        // Trạng thái Game
-        let gameState = "START"; // START, PLAYING, BOSS_FIGHT, GAMEOVER
+        let gameState = "START"; // START, PLAYING, BOSS_FIGHT, GAMEOVER, VICTORY
         let score = 0;
         let highScore = localStorage.getItem("trex_highscore") || 0;
         highScoreEl.innerText = String(highScore).padStart(5, '0');
@@ -161,61 +160,63 @@
         let gameSpeed = 5;
         let gravity = 0.6;
 
-        // Nhân vật T-Rex
         let trex = {
             x: 50,
-            y: 180,
-            width: 30,
-            height: 40,
+            y: 175,
+            width: 34,
+            height: 36,
             vy: 0,
             jumpPower: -11,
             grounded: true,
             isFlying: false,
-            flyTimer: 0
+            flyTimer: 0,
+            isCrying: false
         };
 
         let obstacles = [];
-        let items = []; // Remote
+        let items = []; 
         let clouds = [];
-        let groundX = 0;
 
-        // Câu hỏi đấu Boss
+        // Dữ liệu câu hỏi trắc nghiệm trí tuệ
         const questions = [
-        {
-            q: "Thủ đô của Việt Nam là gì?",
-            answers: ["TP. Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Hải Phòng"],
-            correct: 1
-        },
-        {
-            q: "Kết quả của phép tính: 15 + 25 * 2 là bao nhiêu?",
-            answers: ["80", "55", "65", "90"],
-            correct: 2
-        },
-        {
-            q: "Hành tinh nào gần mặt trời nhất trong hệ Mặt Trời?",
-            answers: ["Sao Kim", "Sao Hỏa", "Sao Thủy", "Trái Đất"],
-            correct: 2
-        },
-        {
-            q: "Ngôn ngữ lập trình nào phổ biến nhất cho web trên trình duyệt?",
-            answers: ["Python", "C++", "JavaScript", "Java"],
-            correct: 2
-        },
-        {
-            q: "Nước nào có diện tích lớn nhất thế giới?",
-            answers: ["Trung Quốc", "Mỹ", "Canada", "Nga"],
-            correct: 3
-        }
+            {
+                q: "Thủ đô của Việt Nam là gì?",
+                answers: ["TP. Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Hải Phòng"],
+                correct: 1
+            },
+            {
+                q: "Kết quả của phép tính: 15 + 25 * 2 là bao nhiêu?",
+                answers: ["80", "55", "65", "90"],
+                correct: 2
+            },
+            {
+                q: "Hành tinh nào gần mặt trời nhất trong hệ Mặt Trời?",
+                answers: ["Sao Kim", "Sao Hỏa", "Sao Thủy", "Trái Đất"],
+                correct: 2
+            },
+            {
+                q: "Ngôn ngữ lập trình nào phổ biến nhất cho web trên trình duyệt?",
+                answers: ["Python", "C++", "JavaScript", "Java"],
+                correct: 2
+            },
+            {
+                q: "Nước nào có diện tích lớn nhất thế giới?",
+                answers: ["Trung Quốc", "Mỹ", "Canada", "Nga"],
+                correct: 3
+            },
+            {
+                q: "Đỉnh núi cao nhất Việt Nam (nóc nhà Đông Dương) tên là gì?",
+                answers: ["Fansipan", "Pu Si Lung", "Lao Than", "Ngọc Linh"],
+                correct: 0
+            }
         ];
         let bossHp = 3;
         let currentQuestion = null;
 
-        // Khởi tạo mây phong cảnh
         for (let i = 0; i < 3; i++) {
             clouds.push({ x: Math.random() * 800, y: Math.random() * 80 + 20, speed: 1 });
         }
 
-        // Bắt sự kiện bàn phím
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space" || e.code === "ArrowUp") {
                 if (gameState === "START") {
@@ -223,7 +224,7 @@
                 } else if (gameState === "PLAYING" && trex.grounded && !trex.isFlying) {
                     trex.vy = trex.jumpPower;
                     trex.grounded = false;
-                } else if (gameState === "GAMEOVER") {
+                } else if (gameState === "GAMEOVER" || gameState === "VICTORY") {
                     resetGame();
                     startGame();
                 }
@@ -236,7 +237,7 @@
             } else if (gameState === "PLAYING" && trex.grounded && !trex.isFlying) {
                 trex.vy = trex.jumpPower;
                 trex.grounded = false;
-            } else if (gameState === "GAMEOVER") {
+            } else if (gameState === "GAMEOVER" || gameState === "VICTORY") {
                 resetGame();
                 startGame();
             }
@@ -250,17 +251,18 @@
             items = [];
             trex.isFlying = false;
             trex.flyTimer = 0;
+            trex.isCrying = false;
         }
 
         function resetGame() {
-            trex.y = 180;
+            trex.y = 175;
             trex.vy = 0;
             trex.grounded = true;
             trex.isFlying = false;
+            trex.isCrying = false;
             bossHp = 3;
         }
 
-        // Spawn chướng ngại vật hoặc remote
         let spawnTimer = 0;
         function handleSpawns() {
             spawnTimer++;
@@ -268,40 +270,37 @@
                 spawnTimer = 0;
                 let typeRand = Math.random();
                 
-                // Xác suất xuất hiện Remote (20%)
+                // Remote xuất hiện (20% xác suất)
                 if (typeRand < 0.2 && score < 950) {
                     items.push({
                         x: 800,
                         y: 150,
-                        width: 25,
-                        height: 25,
+                        width: 22,
+                        height: 22,
                         type: 'remote'
                     });
                 } else {
-                    // Xương rồng hoặc chim
                     let isBird = Math.random() > 0.7 && score > 300;
                     obstacles.push({
                         x: 800,
-                        y: isBird ? 140 : 185,
+                        y: isBird ? 135 : 175,
                         width: isBird ? 30 : 20,
-                        height: isBird ? 25 : 35,
+                        height: isBird ? 24 : 36,
                         isBird: isBird
                     });
                 }
             }
         }
 
-        // Kích hoạt chế độ máy bay khi nhặt remote
         function triggerAirplane() {
             trex.isFlying = true;
-            trex.flyTimer = 10 * 60; // 10 giây (60fps)
+            trex.flyTimer = 10 * 60; // 10 giây
             notificationEl.style.display = "block";
             setTimeout(() => {
                 notificationEl.style.display = "none";
             }, 3000);
         }
 
-        // Bắt đầu đấu Boss
         function startBossFight() {
             gameState = "BOSS_FIGHT";
             bossHp = 3;
@@ -310,12 +309,11 @@
         }
 
         function loadNewQuestion() {
-            bossHpText.innerText = `Máu Boss Xương Rồng: ${bossHp} / 3`;
+            bossHpText.innerText = `Máu Boss Xương Rồng: ${bossHp} / 3 (Cần đúng liên tiếp)`;
             if (bossHp <= 0) {
-                // Thắng Boss
+                // Thắng Boss hoàn toàn
                 bossModal.style.display = "none";
-                gameState = "PLAYING";
-                score += 200; // Thưởng điểm vượt boss
+                gameState = "VICTORY";
                 return;
             }
             currentQuestion = questions[Math.floor(Math.random() * questions.length)];
@@ -335,47 +333,41 @@
                 bossHp--;
                 loadNewQuestion();
             } else {
-                alert("Trả lời sai! Mất 1 máu hoặc chơi lại từ đầu tùy bạn, hãy thử lại câu hỏi tiếp theo!");
+                alert("Trả lời sai! Mất chuỗi đúng, thử lại câu hỏi tiếp theo để hạ Boss!");
                 loadNewQuestion();
             }
         }
 
-        // Vòng lặp game chính
         function update() {
             if (gameState === "PLAYING") {
-                score += 0.1;
+                score += 0.2; // Tăng mét theo thời gian chạy
                 currentScoreEl.innerText = String(Math.floor(score)).padStart(5, '0');
 
-                // Kiểm tra kích hoạt Boss Xương Rồng tại 1000 điểm
+                // Đạt 1000 mét -> Gặp Boss Xương Rồng
                 if (Math.floor(score) >= 1000 && score < 1005) {
                     startBossFight();
                     return;
                 }
 
-                // Tăng tốc dần theo điểm
                 gameSpeed = 5 + Math.floor(score / 200);
 
-                // Quản lý máy bay (10 giây)
                 if (trex.isFlying) {
                     trex.flyTimer--;
-                    trex.y = 80; // Trex bay lơ lửng trên cao
+                    trex.y = 80;
                     trex.vy = 0;
                     if (trex.flyTimer <= 0) {
                         trex.isFlying = false;
                     }
                 } else {
-                    // Trọng lực cho T-Rex chạy mặt đất
                     trex.vy += gravity;
                     trex.y += trex.vy;
-                    if (trex.y > 180) {
-                        trex.y = 180;
+                    if (trex.y > 175) {
+                        trex.y = 175;
                         trex.vy = 0;
                         trex.grounded = true;
                     }
                 }
 
-                // Chuyển động mặt đất & mây
-                groundX = (groundX + gameSpeed) % 800;
                 clouds.forEach(c => {
                     c.x -= c.speed;
                     if (c.x < -50) c.x = 850;
@@ -383,35 +375,31 @@
 
                 handleSpawns();
 
-                // Cập nhật chướng ngại vật
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     obstacles[i].x -= gameSpeed;
 
-                    // Va chạm (Nếu đang bay máy bay thì né hoàn toàn chướng ngại vật dưới đất)
                     if (!trex.isFlying &&
                         trex.x < obstacles[i].x + obstacles[i].width &&
                         trex.x + trex.width > obstacles[i].x &&
                         trex.y < obstacles[i].y + obstacles[i].height &&
                         trex.y + trex.height > obstacles[i].y) {
                         gameState = "GAMEOVER";
-                        if (score > highScore) {
+                        trex.isCrying = true;
+                        if (Math.floor(score) > highScore) {
                             highScore = Math.floor(score);
                             localStorage.setItem("trex_highscore", highScore);
                             highScoreEl.innerText = String(highScore).padStart(5, '0');
                         }
                     }
 
-                    // Xóa chướng ngại vật ra khỏi mảng khi đi qua màn hình
                     if (obstacles[i].x < -50) {
                         obstacles.splice(i, 1);
                     }
                 }
 
-                // Cập nhật vật phẩm (Remote)
                 for (let i = items.length - 1; i >= 0; i--) {
                     items[i].x -= gameSpeed;
 
-                    // Nhặt remote
                     if (
                         trex.x < items[i].x + items[i].width &&
                         trex.x + trex.width > items[i].x &&
@@ -430,7 +418,43 @@
             }
         }
 
-        // Vẽ đồ họa game phong cách Pixel Retro
+        // Vẽ hình dáng T-Rex chuẩn Pixel Art và cảnh kết thúc
+        function drawTrex(x, y, isFlying, isCrying) {
+            ctx.fillStyle = "#535353";
+            if (isFlying) {
+                // Vẽ Máy bay và T-Rex bên trong
+                ctx.fillStyle = "#e17055";
+                ctx.fillRect(x - 10, y - 5, 55, 20);
+                ctx.fillStyle = "#74b9ff";
+                ctx.fillRect(x + 20, y - 10, 15, 10);
+                ctx.fillStyle = "#535353";
+                ctx.fillRect(x + 5, y + 2, 20, 18);
+                return;
+            }
+
+            // Thân chính T-Rex
+            ctx.fillRect(x + 10, y + 10, 18, 16); // Thân
+            ctx.fillRect(x + 18, y, 14, 14);       // Đầu
+            ctx.fillRect(x + 26, y + 6, 6, 6);     // Mõm
+            
+            // Mắt T-Rex
+            if (isCrying) {
+                // Mắt khóc (như hình mẫu)
+                ctx.fillStyle = "#0984e3";
+                ctx.fillRect(x + 26, y + 4, 3, 5); // Giọt nước mắt
+            } else {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(x + 26, y + 3, 3, 3); // Mắt thường trắng
+            }
+
+            // Tay & Chân T-Rex
+            ctx.fillStyle = "#535353";
+            ctx.fillRect(x + 24, y + 13, 4, 3);  // Tay nhỏ
+            ctx.fillRect(x + 12, y + 26, 4, 10); // Chân sau
+            ctx.fillRect(x + 20, y + 26, 4, 10); // Chân trước
+            ctx.fillRect(x + 2, y + 14, 10, 4);  // Đuôi
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -445,65 +469,59 @@
             ctx.strokeStyle = "#535353";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(0, 220);
-            ctx.lineTo(800, 220);
+            ctx.moveTo(0, 212);
+            ctx.lineTo(800, 212);
             ctx.stroke();
 
-            // Vẽ chướng ngại vật (Xương rồng / Chim)
+            // Vẽ chướng ngại vật
             obstacles.forEach(obs => {
                 ctx.fillStyle = "#535353";
-                if (obs.isBird) {
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                } else {
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                }
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
             });
 
-            // Vẽ vật phẩm Remote
+            // Vẽ Remote
             items.forEach(it => {
                 ctx.fillStyle = "#0984e3";
                 ctx.fillRect(it.x, it.y, it.width, it.height);
                 ctx.fillStyle = "#fff";
-                ctx.fillRect(it.x + 8, it.y + 6, 8, 12); // Nút bấm remote
+                ctx.fillRect(it.x + 7, it.y + 5, 8, 12);
             });
 
-            // Vẽ T-Rex hoặc Máy bay
-            if (trex.isFlying) {
-                // Vẽ Máy bay
-                ctx.fillStyle = "#e17055";
-                ctx.fillRect(trex.x - 10, trex.y - 5, 55, 20); // Thân máy bay
-                ctx.fillStyle = "#74b9ff";
-                ctx.fillRect(trex.x + 20, trex.y - 10, 15, 10); // Buồng lái
-                // Vẽ T-rex ngồi bên trong
-                ctx.fillStyle = "#535353";
-                ctx.fillRect(trex.x + 5, trex.y + 2, 20, 20);
-            } else {
-                // Vẽ T-Rex thường
-                ctx.fillStyle = "#535353";
-                ctx.fillRect(trex.x, trex.y, trex.width, trex.height);
-                // Mắt dino
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(trex.x + 20, trex.y + 6, 4, 4);
-            }
+            // Vẽ T-Rex
+            drawTrex(trex.x, trex.y, trex.isFlying, trex.isCrying);
 
-            // Hiển thị trạng thái khi ở màn hình Bắt đầu hoặc Game Over
+            // Màn hình bắt đầu
             if (gameState === "START") {
                 ctx.fillStyle = "#535353";
-                ctx.font = "12px 'Press Start 2P'";
+                ctx.font = "11px 'Press Start 2P'";
                 ctx.textAlign = "center";
                 ctx.fillText("NHẤN PHÍM CÁCH HOẶC CHẠM ĐỂ BẮT ĐẦU", canvas.width / 2, canvas.height / 2);
-            } else if (gameState === "GAMEOVER") {
+            } 
+            // Màn hình Game Over (Khủng long khóc giống hình mẫu)
+            else if (gameState === "GAMEOVER") {
                 ctx.fillStyle = "#ff4757";
-                ctx.font = "14px 'Press Start 2P'";
+                ctx.font = "13px 'Press Start 2P'";
                 ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 15);
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+                
                 ctx.fillStyle = "#535353";
-                ctx.font = "9px 'Press Start 2P'";
-                ctx.fillText("Nhấn phím Cách để chơi lại", canvas.width / 2, canvas.height / 2 + 15);
+                ctx.font = "8px 'Press Start 2P'";
+                ctx.fillText("Nhấn phím Cách để chơi lại", canvas.width / 2, canvas.height / 2 + 10);
+            }
+            // Màn hình Chiến thắng khi vượt qua Boss 1000m
+            else if (gameState === "VICTORY") {
+                ctx.fillStyle = "#2ed573";
+                ctx.font = "13px 'Press Start 2P'";
+                ctx.textAlign = "center";
+                ctx.fillText("CHIẾN THẮNG BOSS XƯƠNG RỒNG!", canvas.width / 2, canvas.height / 2 - 20);
+                
+                ctx.fillStyle = "#535353";
+                ctx.font = "8px 'Press Start 2P'";
+                ctx.fillText("Bạn đã xuất sắc vượt qua 1000 mét và hạ Boss!", canvas.width / 2, canvas.height / 2 + 5);
+                ctx.fillText("Nhấn phím Cách để tiếp tục chơi", canvas.width / 2, canvas.height / 2 + 25);
             }
         }
 
-        // Vòng lặp yêu cầu khung hình
         function loop() {
             update();
             draw();
