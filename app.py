@@ -1,7 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Dino Chrome Puzzle Parkour - Large Edition", layout="centered")
+# Cấu hình tràn khung giao diện Streamlit
+st.set_page_config(page_title="Dino Chrome Fullscreen", layout="wide")
 
 html_code = """
 <!DOCTYPE html>
@@ -10,36 +11,38 @@ html_code = """
     <meta charset="UTF-8">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
-            background-color: #121212;
-            color: #fff;
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #f7f7f7;
+            color: #333;
             font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
         }
         #game-wrapper {
             position: relative;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            border: 4px solid #fff;
-            border-radius: 8px;
-            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
             background: #f7f7f7;
+            overflow: hidden;
         }
-        canvas { display: block; }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
         #ui-bar {
             position: absolute;
-            top: 15px;
+            top: 20px;
             left: 30px;
             right: 30px;
             display: flex;
             justify-content: space-between;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
-            color: #333;
+            color: #535353;
             z-index: 10;
         }
         #quiz-box {
@@ -51,35 +54,37 @@ html_code = """
             background: rgba(30, 30, 30, 0.96);
             border: 3px solid #ffcc00;
             border-radius: 10px;
-            padding: 22px;
-            width: 75%;
+            padding: 25px;
+            width: 80%;
+            max-width: 600px;
             text-align: center;
             z-index: 30;
-            box-shadow: 0 0 25px rgba(255, 204, 0, 0.6);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            color: #fff;
         }
         #quiz-question {
             color: #ffcc00;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         .quiz-option {
-            background: #333;
+            background: #444;
             color: #fff;
             border: 1px solid #666;
-            padding: 10px 18px;
-            margin: 6px;
-            font-size: 15px;
+            padding: 12px 20px;
+            margin: 8px;
+            font-size: 16px;
             border-radius: 6px;
             cursor: pointer;
             font-family: 'Courier New', Courier, monospace;
         }
-        .quiz-option:hover { background: #555; border-color: #ffcc00; }
+        .quiz-option:hover { background: #666; border-color: #ffcc00; }
         
         #intro-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.94);
+            background: rgba(247, 247, 247, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -87,63 +92,57 @@ html_code = """
             text-align: center;
             padding: 30px;
             z-index: 40;
+            color: #535353;
         }
         .title {
-            font-size: 38px;
+            font-size: 42px;
             font-weight: bold;
-            color: #ffcc00;
-            margin-bottom: 12px;
-            text-shadow: 2px 2px #ff0000;
+            color: #535353;
+            margin-bottom: 15px;
         }
         .instructions {
-            font-size: 15px;
-            color: #ccc;
-            max-width: 520px;
+            font-size: 16px;
+            color: #666;
+            max-width: 550px;
             line-height: 1.6;
-            margin-bottom: 25px;
-            background: rgba(255, 255, 255, 0.06);
-            padding: 16px;
+            margin-bottom: 30px;
+            background: #fff;
+            padding: 20px;
             border-radius: 8px;
+            border: 1px solid #ddd;
             text-align: left;
         }
         #start-btn {
-            padding: 12px 28px;
-            font-size: 18px;
+            padding: 14px 36px;
+            font-size: 20px;
             font-weight: bold;
             font-family: 'Courier New', Courier, monospace;
-            color: #000;
-            background: #ffcc00;
+            color: #fff;
+            background: #535353;
             border: none;
             border-radius: 6px;
             cursor: pointer;
         }
-        #start-btn:hover { background: #fff; transform: scale(1.05); }
-
-        #controls-hint {
-            margin-top: 14px;
-            color: #aaa;
-            font-size: 14px;
-            text-align: center;
-        }
+        #start-btn:hover { background: #333; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
     <div id="game-wrapper">
         <div id="intro-overlay">
-            <div class="title">🦖 DINO CHROME PUZZLE (BẢN LỚN)</div>
+            <div class="title">🦖 DINO T-REX FULLSCREEN</div>
             <div class="instructions">
                 🎮 <b>Cách chơi:</b><br>
-                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy.<br>
-                • Vượt qua các chướng ngại vật xương rồng sắc nét.<br>
-                • Giải các câu đố trí tuệ định kỳ trên đường chạy để ghi điểm!
+                • Nhấn <b>Space / W / Mũi tên Lên</b> để nhảy qua xương rồng.<br>
+                • Chú T-Rex có đôi tay vươn ra sắc nét và chạy trên màn hình tràn viền rộng rãi.<br>
+                • Trả lời các câu đố trí tuệ định kỳ trên đường chạy để tích lũy điểm!
             </div>
             <button id="start-btn" onclick="startGame()">▶️ CHƠI NGAY</button>
         </div>
 
         <div id="ui-bar">
             <div>ĐIỂM: <span id="score">00000</span></div>
-            <div>CÂU HỎI TRÍ TUỆ: <span id="puzzle-count">0</span></div>
+            <div>CÂU HỎI ĐÃ GIẢI: <span id="puzzle-count">0</span></div>
         </div>
 
         <div id="quiz-box">
@@ -151,12 +150,7 @@ html_code = """
             <div id="quiz-options-container"></div>
         </div>
 
-        <!-- Tăng kích thước khung vẽ (Canvas) rộng 850px, cao 380px -->
-        <canvas id="gameCanvas" width="850" height="380"></canvas>
-    </div>
-
-    <div id="controls-hint">
-        🎮 <b>Nhảy:</b> Space / Mũi tên Lên | Tương tác giải câu đố bằng chuột.
+        <canvas id="gameCanvas"></canvas>
     </div>
 
 <script>
@@ -167,10 +161,17 @@ const quizBox = document.getElementById('quiz-box');
 const quizQuestion = document.getElementById('quiz-question');
 const quizOptionsContainer = document.getElementById('quiz-options-container');
 
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
 let gameRunning = false;
 let score = 0;
 let puzzleSolvedCount = 0;
-let gameSpeed = 6;
+let gameSpeed = 7;
 let animFrame = 0;
 
 const puzzleBank = [
@@ -183,12 +184,12 @@ const puzzleBank = [
 ];
 
 const dino = {
-    x: 70, y: 260, w: 52, h: 58, vy: 0, gravity: 0.7, jumpPower: -12.5, grounded: true,
-    update() {
+    x: 80, y: 0, w: 56, h: 60, vy: 0, gravity: 0.8, jumpPower: -14, grounded: true,
+    update(groundY) {
         this.vy += this.gravity;
         this.y += this.vy;
-        if (this.y > 260) {
-            this.y = 260;
+        if (this.y > groundY - this.h) {
+            this.y = groundY - this.h;
             this.vy = 0;
             this.grounded = true;
         }
@@ -197,35 +198,38 @@ const dino = {
         ctx.fillStyle = '#535353';
         const px = this.x;
         const py = this.y;
-        const s = 1.3; // Tỷ lệ phóng to nhân vật cho phù hợp màn hình lớn
+        const s = 1.4; // Tỷ lệ phóng to nét chuẩn Pixel
 
         ctx.save();
         ctx.translate(px, py);
         ctx.scale(s, s);
 
-        // 1. Phần đầu khủng long chuẩn tỉ lệ Chrome T-Rex[cite: 1]
-        ctx.fillRect(24, 0, 16, 12);       
-        ctx.fillRect(32, 8, 8, 4);      
-        ctx.fillStyle = '#f7f7f7';                 
-        ctx.fillRect(32, 3, 3, 3);
+        // 1. Đầu khủng long T-Rex
+        ctx.fillRect(20, 0, 18, 14);       
+        ctx.fillRect(28, 9, 10, 5);      
+        ctx.fillStyle = '#f7f7f7'; // Mắt
+        ctx.fillRect(28, 3, 3, 3);
 
-        // 2. Phần thân & tay
+        // 2. Thân chính
         ctx.fillStyle = '#535353';
-        ctx.fillRect(12, 12, 16, 16);    
-        ctx.fillRect(28, 16, 4, 5);     
+        ctx.fillRect(10, 14, 18, 16);    
 
-        // 3. Phần đuôi
-        ctx.fillRect(4, 14, 8, 8);
-        ctx.fillRect(0, 16, 4, 6);
-        ctx.fillRect(-4, 18, 4, 4);
+        // 3. ĐÔI TAY T-REX RÕ NÉT VƯƠN RA
+        ctx.fillRect(26, 18, 7, 3); // Cánh tay vươn trước
+        ctx.fillRect(31, 20, 2, 4); // Bàn tay nhỏ rủ xuống
 
-        // 4. Chân khủng long
-        if (animFrame % 20 < 10) {
-            ctx.fillRect(12, 28, 4, 12);  
-            ctx.fillRect(20, 28, 4, 8);   
+        // 4. Đuôi phía sau
+        ctx.fillRect(2, 16, 8, 8);
+        ctx.fillRect(-2, 18, 4, 6);
+        ctx.fillRect(-6, 20, 4, 4);
+
+        // 5. Chân bước nhịp nhàng
+        if (animFrame % 18 < 9) {
+            ctx.fillRect(10, 30, 5, 12);  
+            ctx.fillRect(18, 30, 5, 7);   
         } else {
-            ctx.fillRect(12, 28, 4, 8);   
-            ctx.fillRect(20, 28, 4, 12);  
+            ctx.fillRect(10, 30, 5, 7);   
+            ctx.fillRect(18, 30, 5, 12);  
         }
         ctx.restore();
     }
@@ -234,20 +238,20 @@ const dino = {
 let obstacles = [];
 let clouds = [];
 
-function spawnObstacle() {
+function spawnObstacle(groundY) {
     let type = Math.random() > 0.4 ? 'cactus' : 'bird';
     let obs = {
         x: canvas.width,
-        y: type === 'cactus' ? 268 : 200,
-        w: type === 'cactus' ? 28 : 42,
-        h: type === 'cactus' ? 50 : 30,
+        y: type === 'cactus' ? groundY - 52 : groundY - 110,
+        w: type === 'cactus' ? 32 : 46,
+        h: type === 'cactus' ? 52 : 32,
         type: type
     };
     obstacles.push(obs);
 }
 
 function spawnCloud() {
-    clouds.push({ x: canvas.width, y: Math.random() * 120 + 20, speed: 1.5 });
+    clouds.push({ x: canvas.width, y: Math.random() * 120 + 40, speed: 1.5 });
 }
 
 window.addEventListener('keydown', e => {
@@ -264,7 +268,7 @@ function startGame() {
     introOverlay.style.display = 'none';
     score = 0;
     puzzleSolvedCount = 0;
-    gameSpeed = 6;
+    gameSpeed = 7;
     obstacles = [];
     clouds = [];
     gameRunning = true;
@@ -307,32 +311,34 @@ function loop() {
     animFrame++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Vẽ mặt đất
+    const groundY = canvas.height - 80;
+
+    // Đường mặt đất đất chạy dài
     ctx.strokeStyle = '#535353';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(0, 318);
-    ctx.lineTo(canvas.width, 318);
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(canvas.width, groundY);
     ctx.stroke();
 
     // Mây trôi
     cloudTimer++;
-    if (cloudTimer > 100) {
+    if (cloudTimer > 120) {
         spawnCloud();
         cloudTimer = 0;
     }
     for (let i = clouds.length - 1; i >= 0; i--) {
         let c = clouds[i];
         c.x -= c.speed;
-        ctx.fillStyle = '#d8d8d8';
-        ctx.fillRect(c.x, c.y, 60, 16);
-        if (c.x < -60) clouds.splice(i, 1);
+        ctx.fillStyle = '#d0d0d0';
+        ctx.fillRect(c.x, c.y, 65, 18);
+        if (c.x < -70) clouds.splice(i, 1);
     }
 
     // Sinh chướng ngại vật
     obstacleTimer++;
-    if (obstacleTimer > Math.floor(Math.random() * 60 + 90)) {
-        spawnObstacle();
+    if (obstacleTimer > Math.floor(Math.random() * 60 + 80)) {
+        spawnObstacle(groundY);
         obstacleTimer = 0;
     }
 
@@ -344,48 +350,48 @@ function loop() {
         if (obs.type === 'cactus') {
             let cx = obs.x;
             let cy = obs.y;
-            // Xương rồng sắc nét tỷ lệ lớn
-            ctx.fillRect(cx + 8, cy + 6, 12, 44);
-            ctx.fillRect(cx, cy + 16, 8, 12);
-            ctx.fillRect(cx, cy + 10, 4, 8);
-            ctx.fillRect(cx + 20, cy + 22, 8, 14);
-            ctx.fillRect(cx + 24, cy + 16, 4, 8);
+            // Xương rồng sắc nét
+            ctx.fillRect(cx + 10, cy + 6, 12, 46);
+            ctx.fillRect(cx, cy + 18, 10, 12);
+            ctx.fillRect(cx, cy + 12, 4, 8);
+            ctx.fillRect(cx + 22, cy + 24, 10, 14);
+            ctx.fillRect(cx + 28, cy + 18, 4, 8);
         } else {
-            ctx.fillRect(obs.x, obs.y + (animFrame % 15 < 8 ? 0 : 8), obs.w, obs.h);
+            ctx.fillRect(obs.x, obs.y + (animFrame % 14 < 7 ? 0 : 8), obs.w, obs.h);
         }
 
-        // Kiểm tra va chạm chuẩn xác theo kích thước mới
+        // Kiểm tra va chạm
         if (
-            dino.x < obs.x + obs.w - 6 &&
-            dino.x + dino.w - 6 > obs.x &&
-            dino.y < obs.y + obs.h - 6 &&
-            dino.y + dino.h - 6 > obs.y
+            dino.x < obs.x + obs.w - 8 &&
+            dino.x + dino.w - 8 > obs.x &&
+            dino.y < obs.y + obs.h - 8 &&
+            dino.y + dino.h - 8 > obs.y
         ) {
             gameRunning = false;
             introOverlay.style.display = 'flex';
             document.querySelector('.title').innerText = "💀 GAME OVER";
-            document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\\nSố câu đố giải được: ${puzzleSolvedCount}`;
+            document.querySelector('.instructions').innerText = `Điểm số đạt được: ${score}\nSố câu đố giải được: ${puzzleSolvedCount}`;
             document.getElementById('start-btn').innerText = "🔄 CHƠI LẠI";
             return;
         }
 
-        if (obs.x < -60) obstacles.splice(i, 1);
+        if (obs.x < -70) obstacles.splice(i, 1);
     }
 
-    dino.update();
+    dino.update(groundY);
     dino.draw();
 
     score += 1;
     puzzleTriggerDistance++;
     document.getElementById('score').innerText = String(score).padStart(5, '0');
 
-    if (puzzleTriggerDistance > 480) {
+    if (puzzleTriggerDistance > 500) {
         puzzleTriggerDistance = 0;
         triggerPuzzle();
         return;
     }
 
-    gameSpeed = 6 + Math.floor(score / 350);
+    gameSpeed = 7 + Math.floor(score / 400);
 
     requestAnimationFrame(loop);
 }
@@ -394,4 +400,4 @@ function loop() {
 </html>
 """
 
-components.html(html_code, height=450)
+components.html(html_code, height=700)
